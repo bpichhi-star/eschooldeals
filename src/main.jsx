@@ -1,9 +1,6 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import EschoolDeals from './EschoolDeals.jsx'
-
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <EschoolDeals />
-  </StrictMode>,
-)
+import React from "react";
+import ReactDOM from "react-dom/client";
+import EschoolDeals from "./EschoolDeals";
+ReactDOM.createRoot(document.getElementById("root")).render(
+    <React.StrictMode><EschoolDeals /></React.StrictMode>React.StrictMode>
+  );</React.StrictMode>
