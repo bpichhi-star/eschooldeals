@@ -4,9 +4,16 @@ export default function PromoStrip() {
   return (
     <div className="promo-strip">
       <span className="promo-label">PROMOTED</span>
+
       <div className="promo-cards">
         {promoDeals.map((deal) => (
-          <a key={deal.id} href={deal.url} className="promo-card">
+          <a
+            key={deal.id}
+            href={deal.url}
+            className="promo-card"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <div
               className="promo-thumb"
               style={{ background: deal.thumbBg }}
