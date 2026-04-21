@@ -9,11 +9,31 @@ export default function DealCard({ deal }) {
       target="_blank"
       rel="noopener noreferrer"
     >
-      <div className="deal-thumb" style={{ background: deal.thumbBg }}>
+      <div
+        className="deal-thumb"
+        style={{
+          background: deal.thumbBg,
+          padding: '10px',
+        }}
+      >
         <div className="deal-pct">-{deal.discountPct}%</div>
+
         {deal.isStudentPick && (
           <div className="student-badge">STUDENT PICK</div>
         )}
+
+        {deal.image ? (
+          <img
+            src={deal.image}
+            alt={deal.title}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+              display: 'block',
+            }}
+          />
+        ) : null}
       </div>
 
       <div className="deal-body">
