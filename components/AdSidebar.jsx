@@ -1,0 +1,1 @@
+export default function AdSidebar(){return (<aside className="ad-sidebar"><div className="ad-box"><div className="ad-label">Sponsor</div><div className="ad-area ad-area-lg"><div className="ad-text">SPONSOR</div></div></div></aside>)}
