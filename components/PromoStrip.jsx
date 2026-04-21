@@ -16,8 +16,25 @@ export default function PromoStrip() {
           >
             <div
               className="promo-thumb"
-              style={{ background: deal.thumbBg }}
-            />
+              style={{
+                background: deal.thumbBg,
+                padding: '6px',
+              }}
+            >
+              {deal.image ? (
+                <img
+                  src={deal.image}
+                  alt={deal.title}
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    objectFit: 'contain',
+                    display: 'block',
+                  }}
+                />
+              ) : null}
+            </div>
+
             <div className="promo-name">{deal.title}</div>
             <div className="promo-price">${deal.price}</div>
           </a>
