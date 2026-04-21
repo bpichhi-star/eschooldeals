@@ -22,26 +22,25 @@ export default function HomePage() {
       <NavBar />
       <CategoryNav />
 
-      <div style={{ background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
-        <div
-          style={{
-            maxWidth: '1400px',
-            margin: '0 auto',
-            padding: '10px 24px 12px',
-            display: 'flex',
-            gap: '12px',
-            alignItems: 'center',
-          }}
-        >
-          <div className="searchbar" style={{ flex: 1 }}>
-            <input placeholder="Search deals, stores, products..." />
+      <section className="search-row" aria-label="Search deals">
+        <div className="search-row-inner">
+          <div className="searchbar">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="6.5" cy="6.5" r="4.5" stroke="#aeaeb2" strokeWidth="1.5" />
+              <line x1="10" y1="10" x2="14.5" y2="14.5" stroke="#aeaeb2" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search deals, stores, products..."
+              aria-label="Search deals"
+            />
           </div>
 
-          <button className="alert-btn" style={{ minWidth: '120px' }}>
+          <button className="alert-btn">
             Search
           </button>
         </div>
-      </div>
+      </section>
 
       <div className="page-wrap">
         <main>
