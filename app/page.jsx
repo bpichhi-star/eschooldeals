@@ -3,7 +3,6 @@ import CategoryNav from '@/components/CategoryNav'
 import PromoStrip from '@/components/PromoStrip'
 import DealCard from '@/components/DealCard'
 import AdSidebar from '@/components/AdSidebar'
-import StudentHub from '@/components/StudentHub'
 import { deals } from '@/lib/deals'
 
 function getToday() {
@@ -23,11 +22,17 @@ export default function HomePage() {
       <NavBar />
       <CategoryNav />
 
+      <section className="search-row">
+        <div className="search-row-inner">
+          <div className="searchbar">
+            <input placeholder="Search deals, stores, products..." />
+          </div>
+          <button className="alert-btn">Search</button>
+        </div>
+      </section>
+
       <div className="page-wrap">
-
-        {/* Main content */}
         <main>
-
           <div className="section-header">
             <h1 className="section-title">Today's Deals</h1>
             <span className="section-date">{today}</span>
@@ -40,14 +45,9 @@ export default function HomePage() {
               <DealCard key={deal.id} deal={deal} />
             ))}
           </div>
-
-          <StudentHub />
-
         </main>
 
-        {/* Ad sidebar */}
         <AdSidebar />
-
       </div>
     </>
   )
