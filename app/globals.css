@@ -5,34 +5,29 @@
 }
 
 :root {
-  --bg-page: #f5f5f7;
-  --bg-card: #ffffff;
-  --bg-surface: #f5f5f7;
+  --bg-page: #F5F5F7;
+  --bg-card: #FFFFFF;
+  --bg-surface: #F5F5F7;
   --text-primary: #1d1d1f;
   --text-secondary: #6e6e73;
   --text-tertiary: #aeaeb2;
-  --accent: #ff4500;
+  --accent: #FF4500;
   --accent-hover: #e63e00;
-  --green: #30a46c;
+  --green: #30A46C;
   --border: rgba(0, 0, 0, 0.07);
   --border-strong: rgba(0, 0, 0, 0.12);
   --radius-sm: 8px;
   --radius-md: 11px;
   --radius-lg: 14px;
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
 }
 
-html,
-body {
+html, body {
   font-family: var(--font);
   background: var(--bg-page);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-  min-height: 100vh;
 }
 
 a {
@@ -121,7 +116,21 @@ button {
   border-bottom-color: var(--text-primary);
 }
 
-/* ── SEARCHBAR ───────────────────────────────── */
+/* ── SEARCH ROW ──────────────────────────────── */
+.search-row {
+  background: #fff;
+  border-bottom: 0.5px solid var(--border);
+}
+
+.search-row-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 11px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .searchbar {
   flex: 1;
   background: var(--bg-surface);
@@ -131,7 +140,7 @@ button {
   align-items: center;
   gap: 8px;
   border: 0.5px solid transparent;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s;
 }
 
 .searchbar:focus-within {
@@ -162,13 +171,12 @@ button {
   border-radius: 7px;
   white-space: nowrap;
   letter-spacing: 0.2px;
-  transition: opacity 0.15s, background 0.15s;
+  transition: opacity 0.15s;
   flex-shrink: 0;
 }
 
 .alert-btn:hover {
-  opacity: 0.9;
-  background: var(--accent-hover);
+  opacity: 0.85;
 }
 
 /* ── PAGE LAYOUT ─────────────────────────────── */
@@ -177,7 +185,7 @@ button {
   margin: 0 auto;
   padding: 16px 24px 40px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 168px;
+  grid-template-columns: 1fr 168px;
   gap: 14px;
   align-items: start;
 }
@@ -282,7 +290,7 @@ button {
 /* ── DEAL GRID ───────────────────────────────── */
 .deal-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
 }
 
@@ -300,7 +308,6 @@ button {
 
 .deal-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
 }
 
 .deal-thumb {
@@ -429,13 +436,8 @@ button {
   gap: 6px;
 }
 
-.ad-area-lg {
-  height: 210px;
-}
-
-.ad-area-sm {
-  height: 120px;
-}
+.ad-area-lg { height: 210px; }
+.ad-area-sm { height: 120px; }
 
 .ad-placeholder {
   width: 42px;
@@ -461,30 +463,28 @@ button {
   .page-wrap {
     grid-template-columns: 1fr;
   }
-
   .ad-sidebar {
     display: none;
   }
-
   .deal-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
 @media (max-width: 700px) {
   .deal-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, 1fr);
   }
-
   .page-wrap {
     padding: 12px 14px 30px;
   }
-
   .navbar {
     padding: 10px 14px;
   }
-
   .cat-nav-inner {
     padding: 0 14px;
+  }
+  .search-row-inner {
+    padding: 10px 14px;
   }
 }
