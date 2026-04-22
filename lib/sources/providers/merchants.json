@@ -2,50 +2,49 @@
   {
     "key": "amazon",
     "label": "Amazon",
-    "type": "feed",
+    "type": "scrape",
     "enabled": true,
     "categoryHints": ["Electronics", "Computers", "Home", "Kitchen", "Office"],
     "config": {
       "merchant": "AMAZON",
-      "url": "",
-      "format": "json"
+      "url": "https://us.amazon.com/deals",
+      "extract": "jsonld"
     }
   },
   {
     "key": "walmart",
     "label": "Walmart",
-    "type": "feed",
+    "type": "scrape",
     "enabled": true,
     "categoryHints": ["Home", "Kitchen", "Electronics", "Dorm", "Office"],
     "config": {
       "merchant": "WALMART",
-      "url": "",
-      "format": "json"
+      "url": "https://www.walmart.com/shop/deals%2Cflash-deals",
+      "extract": "jsonld"
     }
   },
   {
     "key": "target",
     "label": "Target",
-    "type": "feed",
+    "type": "scrape",
     "enabled": true,
     "categoryHints": ["Home", "Kitchen", "Dorm", "Beauty", "Office"],
     "config": {
       "merchant": "TARGET",
-      "url": "",
-      "format": "json"
+      "url": "https://www.target.com/c/top-deals/-/N-4xw74",
+      "extract": "jsonld"
     }
   },
   {
     "key": "bestbuy",
     "label": "Best Buy",
-    "type": "api",
+    "type": "scrape",
     "enabled": true,
     "categoryHints": ["Electronics", "Computers", "Phones"],
     "config": {
       "merchant": "BEST BUY",
-      "url": "",
-      "method": "GET",
-      "headers": {}
+      "url": "https://www.bestbuy.com/top-deals",
+      "extract": "jsonld"
     }
   },
   {
@@ -56,69 +55,68 @@
     "categoryHints": ["Electronics", "Home", "Kitchen"],
     "config": {
       "merchant": "WOOT",
-      "url": "",
+      "url": "https://deals.woot.com/",
       "extract": "jsonld"
     }
   },
   {
     "key": "ebay",
     "label": "eBay",
-    "type": "api",
+    "type": "scrape",
     "enabled": true,
     "categoryHints": ["Electronics", "Home", "Computers"],
     "config": {
       "merchant": "EBAY",
-      "url": "",
-      "method": "GET",
-      "headers": {}
+      "url": "https://www.ebay.com/deals/",
+      "extract": "jsonld"
     }
   },
   {
     "key": "wayfair",
     "label": "Wayfair",
-    "type": "feed",
+    "type": "scrape",
     "enabled": true,
     "categoryHints": ["Home", "Dorm"],
     "config": {
       "merchant": "WAYFAIR",
-      "url": "",
-      "format": "json"
+      "url": "https://www.wayfair.com/keyword.php?keyword=super+sale",
+      "extract": "jsonld"
     }
   },
   {
     "key": "rei",
     "label": "REI",
-    "type": "feed",
+    "type": "scrape",
     "enabled": true,
     "categoryHints": ["Sports", "Travel", "Outdoors"],
     "config": {
       "merchant": "REI",
-      "url": "",
-      "format": "json"
+      "url": "https://www.rei.com/h/deals",
+      "extract": "jsonld"
     }
   },
   {
     "key": "macys",
     "label": "Macy's",
-    "type": "feed",
+    "type": "scrape",
     "enabled": true,
     "categoryHints": ["Fashion", "Beauty", "Home"],
     "config": {
       "merchant": "MACY'S",
-      "url": "",
-      "format": "json"
+      "url": "https://www.macys.com/shop/sale?id=3536",
+      "extract": "jsonld"
     }
   },
   {
     "key": "adidas",
     "label": "Adidas",
-    "type": "feed",
+    "type": "scrape",
     "enabled": true,
     "categoryHints": ["Fashion", "Sports"],
     "config": {
       "merchant": "ADIDAS",
-      "url": "",
-      "format": "json"
+      "url": "https://www.adidas.com/us/browse-sale",
+      "extract": "jsonld"
     }
   }
 ]
