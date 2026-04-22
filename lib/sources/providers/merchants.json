@@ -1,1 +1,124 @@
-[]
+[
+  {
+    "key": "amazon",
+    "label": "Amazon",
+    "type": "feed",
+    "enabled": true,
+    "categoryHints": ["Electronics", "Computers", "Home", "Kitchen", "Office"],
+    "config": {
+      "merchant": "AMAZON",
+      "url": "",
+      "format": "json"
+    }
+  },
+  {
+    "key": "walmart",
+    "label": "Walmart",
+    "type": "feed",
+    "enabled": true,
+    "categoryHints": ["Home", "Kitchen", "Electronics", "Dorm", "Office"],
+    "config": {
+      "merchant": "WALMART",
+      "url": "",
+      "format": "json"
+    }
+  },
+  {
+    "key": "target",
+    "label": "Target",
+    "type": "feed",
+    "enabled": true,
+    "categoryHints": ["Home", "Kitchen", "Dorm", "Beauty", "Office"],
+    "config": {
+      "merchant": "TARGET",
+      "url": "",
+      "format": "json"
+    }
+  },
+  {
+    "key": "bestbuy",
+    "label": "Best Buy",
+    "type": "api",
+    "enabled": true,
+    "categoryHints": ["Electronics", "Computers", "Phones"],
+    "config": {
+      "merchant": "BEST BUY",
+      "url": "",
+      "method": "GET",
+      "headers": {}
+    }
+  },
+  {
+    "key": "woot",
+    "label": "Woot",
+    "type": "scrape",
+    "enabled": true,
+    "categoryHints": ["Electronics", "Home", "Kitchen"],
+    "config": {
+      "merchant": "WOOT",
+      "url": "",
+      "extract": "jsonld"
+    }
+  },
+  {
+    "key": "ebay",
+    "label": "eBay",
+    "type": "api",
+    "enabled": true,
+    "categoryHints": ["Electronics", "Home", "Computers"],
+    "config": {
+      "merchant": "EBAY",
+      "url": "",
+      "method": "GET",
+      "headers": {}
+    }
+  },
+  {
+    "key": "wayfair",
+    "label": "Wayfair",
+    "type": "feed",
+    "enabled": true,
+    "categoryHints": ["Home", "Dorm"],
+    "config": {
+      "merchant": "WAYFAIR",
+      "url": "",
+      "format": "json"
+    }
+  },
+  {
+    "key": "rei",
+    "label": "REI",
+    "type": "feed",
+    "enabled": true,
+    "categoryHints": ["Sports", "Travel", "Outdoors"],
+    "config": {
+      "merchant": "REI",
+      "url": "",
+      "format": "json"
+    }
+  },
+  {
+    "key": "macys",
+    "label": "Macy's",
+    "type": "feed",
+    "enabled": true,
+    "categoryHints": ["Fashion", "Beauty", "Home"],
+    "config": {
+      "merchant": "MACY'S",
+      "url": "",
+      "format": "json"
+    }
+  },
+  {
+    "key": "adidas",
+    "label": "Adidas",
+    "type": "feed",
+    "enabled": true,
+    "categoryHints": ["Fashion", "Sports"],
+    "config": {
+      "merchant": "ADIDAS",
+      "url": "",
+      "format": "json"
+    }
+  }
+]
