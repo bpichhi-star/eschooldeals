@@ -1,5 +1,8 @@
 export default function DealCard({ deal }) {
   const savings = (deal.originalPrice - deal.salePrice).toFixed(2)
+  const proxiedImage = deal.image
+    ? `/api/img?url=${encodeURIComponent(deal.image)}`
+    : null
 
   return (
     <a
@@ -11,20 +14,15 @@ export default function DealCard({ deal }) {
     >
       <div
         className="deal-thumb"
-        style={{
-          background: deal.thumbBg,
-          padding: '10px',
-        }}
+        style={{ background: deal.thumbBg, padding: '10px' }}
       >
         <div className="deal-pct">-{deal.discountPct}%</div>
-
         {deal.isStudentPick && (
           <div className="student-badge">STUDENT PICK</div>
         )}
-
-        {deal.image ? (
+        {proxiedImage ? (
           <img
-            src={deal.image}
+            src={proxiedImage}
             alt={deal.title}
             style={{
               maxWidth: '100%',
@@ -39,7 +37,6 @@ export default function DealCard({ deal }) {
       <div className="deal-body">
         <div className="deal-merchant">{deal.merchant}</div>
         <div className="deal-title">{deal.title}</div>
-
         <div className="deal-pricing">
           <div className="deal-price-row">
             <span className="deal-sale">${deal.salePrice.toFixed(0)}</span>
