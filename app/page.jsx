@@ -25,25 +25,31 @@ export default function HomePage() {
   const [draftQuery, setDraftQuery] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [allDeals, setAllDeals] = useState([])
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     let isMounted = true
 
     async function loadDeals() {
       try {
-        const res = await fetch('/api/deals', { cache: 'no-store' })
-        if (!res.ok) return
+        const res = await fetch(`/api/deals?t=${Date.now()}`, {
+          cache: 'no-store',
+        })
+
+        if (!res.ok) {
+          throw new Error('Failed to load deals')
+        }
 
         const data = await res.json()
+
         if (!isMounted) return
 
-        if (Array.isArray(data?.deals)) {
-          setAllDeals(data.deals)
-        }
+        setAllDeals(Array.isArray(data?.deals) ? data.deals : [])
+        setLoaded(true)
       } catch {
-        if (isMounted) {
-          setAllDeals([])
-        }
+        if (!isMounted) return
+        setAllDeals([])
+        setLoaded(true)
       }
     }
 
@@ -75,17 +81,13 @@ export default function HomePage() {
     setSearchQuery(draftQuery)
   }
 
-  function handleCategorySelect(category) {
-    setActiveCategory(category)
-  }
-
   return (
     <>
       <NavBar />
       <CategoryNav
         categories={visibleCategories}
         activeCategory={activeCategory}
-        onSelectCategory={handleCategorySelect}
+        onSelectCategory={setActiveCategory}
       />
 
       <section className="search-row" aria-label="Search deals">
@@ -129,7 +131,20 @@ export default function HomePage() {
 
           <PromoStrip deals={allDeals.slice(0, 4)} />
 
-          {filteredDeals.length > 0 ? (
+          {!loaded ? (
+            <div
+              style={{
+                background: '#fff',
+                border: '0.5px solid rgba(0,0,0,0.07)',
+                borderRadius: '11px',
+                padding: '20px',
+                fontSize: '13px',
+                color: '#6e6e73',
+              }}
+            >
+              Loading live deals...
+            </div>
+          ) : filteredDeals.length > 0 ? (
             <div className="deal-grid">
               {filteredDeals.map((deal) => (
                 <DealCard key={deal.id} deal={deal} />
