@@ -3,23 +3,27 @@ const WOOT_CID = '7936037'
 const WOOT_AID = '4909784'
 
 function affiliateUrl(merchant, productUrl) {
+  if (!productUrl) return '#'
+
   switch (merchant) {
     case 'AMAZON':
+      if (productUrl.includes('tag=')) return productUrl
       return `${productUrl}${productUrl.includes('?') ? '&' : '?'}tag=${AMZN_TAG}`
+
     case 'WOOT':
       return `https://www.anrdoezrs.net/click-${WOOT_CID}-${WOOT_AID}?url=${encodeURIComponent(productUrl)}`
+
     default:
       return productUrl
   }
 }
 
 export default function DealCard({ deal }) {
-  const savings = (deal.originalPrice - deal.salePrice).toFixed(2)
-  const proxiedImage = deal.image
-    ? `/api/img?url=${encodeURIComponent(deal.image)}`
-    : null
-
-  const href = affiliateUrl(deal.merchant, deal.productUrl)
+  const original = Number(deal.originalPrice || 0)
+  const sale = Number(deal.salePrice || 0)
+  const savings = Math.max(original - sale, 0).toFixed(2)
+  const imageSrc = deal.image || null
+  const href = affiliateUrl(deal.merchant, deal.productUrl || deal.url)
 
   return (
     <a
@@ -31,7 +35,7 @@ export default function DealCard({ deal }) {
     >
       <div
         className="deal-thumb"
-        style={{ background: deal.thumbBg, padding: '10px' }}
+        style={{ background: deal.thumbBg || '#f5f5f7', padding: '10px' }}
       >
         <div className="deal-pct">-{deal.discountPct}%</div>
 
@@ -39,11 +43,13 @@ export default function DealCard({ deal }) {
           <div className="student-badge">STUDENT PICK</div>
         )}
 
-        {proxiedImage && (
+        {imageSrc && (
           <img
-            src={proxiedImage}
+            src={imageSrc}
             alt={deal.title}
             className="deal-img"
+            loading="lazy"
+            referrerPolicy="no-referrer"
             style={{
               maxWidth: '100%',
               maxHeight: '100%',
@@ -61,10 +67,8 @@ export default function DealCard({ deal }) {
 
         <div className="deal-pricing">
           <div className="deal-price-row">
-            <span className="deal-sale">${deal.salePrice.toFixed(2)}</span>
-            <span className="deal-original">
-              ${deal.originalPrice.toFixed(2)}
-            </span>
+            <span className="deal-sale">${sale.toFixed(2)}</span>
+            <span className="deal-original">${original.toFixed(2)}</span>
           </div>
 
           <div className="deal-save">Save ${savings}</div>
