@@ -2,121 +2,96 @@
   {
     "key": "amazon",
     "label": "Amazon",
-    "type": "scrape",
+    "type": "feed",
     "enabled": true,
-    "categoryHints": ["Electronics", "Computers", "Home", "Kitchen", "Office"],
     "config": {
       "merchant": "AMAZON",
-      "url": "https://us.amazon.com/deals",
-      "extract": "jsonld"
-    }
-  },
-  {
-    "key": "walmart",
-    "label": "Walmart",
-    "type": "scrape",
-    "enabled": true,
-    "categoryHints": ["Home", "Kitchen", "Electronics", "Dorm", "Office"],
-    "config": {
-      "merchant": "WALMART",
-      "url": "https://www.walmart.com/shop/deals%2Cflash-deals",
-      "extract": "jsonld"
-    }
-  },
-  {
-    "key": "target",
-    "label": "Target",
-    "type": "scrape",
-    "enabled": true,
-    "categoryHints": ["Home", "Kitchen", "Dorm", "Beauty", "Office"],
-    "config": {
-      "merchant": "TARGET",
-      "url": "https://www.target.com/c/top-deals/-/N-4xw74",
-      "extract": "jsonld"
-    }
-  },
-  {
-    "key": "bestbuy",
-    "label": "Best Buy",
-    "type": "scrape",
-    "enabled": true,
-    "categoryHints": ["Electronics", "Computers", "Phones"],
-    "config": {
-      "merchant": "BEST BUY",
-      "url": "https://www.bestbuy.com/top-deals",
-      "extract": "jsonld"
-    }
-  },
-  {
-    "key": "woot",
-    "label": "Woot",
-    "type": "scrape",
-    "enabled": true,
-    "categoryHints": ["Electronics", "Home", "Kitchen"],
-    "config": {
-      "merchant": "WOOT",
-      "url": "https://deals.woot.com/",
-      "extract": "jsonld"
-    }
-  },
-  {
-    "key": "ebay",
-    "label": "eBay",
-    "type": "scrape",
-    "enabled": true,
-    "categoryHints": ["Electronics", "Home", "Computers"],
-    "config": {
-      "merchant": "EBAY",
-      "url": "https://www.ebay.com/deals/",
-      "extract": "jsonld"
-    }
-  },
-  {
-    "key": "wayfair",
-    "label": "Wayfair",
-    "type": "scrape",
-    "enabled": true,
-    "categoryHints": ["Home", "Dorm"],
-    "config": {
-      "merchant": "WAYFAIR",
-      "url": "https://www.wayfair.com/keyword.php?keyword=super+sale",
-      "extract": "jsonld"
-    }
-  },
-  {
-    "key": "rei",
-    "label": "REI",
-    "type": "scrape",
-    "enabled": true,
-    "categoryHints": ["Sports", "Travel", "Outdoors"],
-    "config": {
-      "merchant": "REI",
-      "url": "https://www.rei.com/h/deals",
-      "extract": "jsonld"
-    }
-  },
-  {
-    "key": "macys",
-    "label": "Macy's",
-    "type": "scrape",
-    "enabled": true,
-    "categoryHints": ["Fashion", "Beauty", "Home"],
-    "config": {
-      "merchant": "MACY'S",
-      "url": "https://www.macys.com/shop/sale?id=3536",
-      "extract": "jsonld"
-    }
-  },
-  {
-    "key": "adidas",
-    "label": "Adidas",
-    "type": "scrape",
-    "enabled": true,
-    "categoryHints": ["Fashion", "Sports"],
-    "config": {
-      "merchant": "ADIDAS",
-      "url": "https://www.adidas.com/us/browse-sale",
-      "extract": "jsonld"
+      "mockItems": [
+        {
+          "id": "B09XS7JWHH",
+          "title": "Sony WH-1000XM5 Wireless Noise Cancelling Headphones",
+          "category": "Electronics",
+          "original_price": 349.99,
+          "sale_price": 148.0,
+          "discount_pct": 58,
+          "url": "https://www.amazon.com/dp/B09XS7JWHH?tag=eschooldeals-20",
+          "image": "https://images-na.ssl-images-amazon.com/images/P/B09XS7JWHH.01._SL300_.jpg",
+          "in_stock": true,
+          "is_student_relevant": true
+        },
+        {
+          "id": "B0C6BGWB3M",
+          "title": "Samsung Galaxy Watch 6 44mm Smartwatch",
+          "category": "Electronics",
+          "original_price": 379.99,
+          "sale_price": 169.99,
+          "discount_pct": 55,
+          "url": "https://www.amazon.com/dp/B0C6BGWB3M?tag=eschooldeals-20",
+          "image": "https://images-na.ssl-images-amazon.com/images/P/B0C6BGWB3M.01._SL300_.jpg",
+          "in_stock": true,
+          "is_student_relevant": false
+        },
+        {
+          "id": "B09NQXS8XJ",
+          "title": "Acer Aspire 5 15.6\\\" FHD Laptop 16GB RAM 512GB SSD",
+          "category": "Computers",
+          "original_price": 699.99,
+          "sale_price": 449.0,
+          "discount_pct": 35,
+          "url": "https://www.amazon.com/dp/B09NQXS8XJ?tag=eschooldeals-20",
+          "image": "https://images-na.ssl-images-amazon.com/images/P/B09NQXS8XJ.01._SL300_.jpg",
+          "in_stock": true,
+          "is_student_relevant": true
+        },
+        {
+          "id": "B00ET5VMTU",
+          "title": "DEWALT 20V MAX Cordless Drill/Driver Kit",
+          "category": "Tools",
+          "original_price": 199.99,
+          "sale_price": 78.0,
+          "discount_pct": 61,
+          "url": "https://www.amazon.com/dp/B00ET5VMTU?tag=eschooldeals-20",
+          "image": "https://images-na.ssl-images-amazon.com/images/P/B00ET5VMTU.01._SL300_.jpg",
+          "in_stock": true,
+          "is_student_relevant": false
+        },
+        {
+          "id": "B092DWFJWQ",
+          "title": "Ninja Creami 7-in-1 Ice Cream & Frozen Treat Maker",
+          "category": "Kitchen",
+          "original_price": 299.99,
+          "sale_price": 99.0,
+          "discount_pct": 68,
+          "url": "https://www.amazon.com/dp/B092DWFJWQ?tag=eschooldeals-20",
+          "image": "https://images-na.ssl-images-amazon.com/images/P/B092DWFJWQ.01._SL300_.jpg",
+          "in_stock": true,
+          "is_student_relevant": true
+        },
+        {
+          "id": "B08BKVY4ZC",
+          "title": "Reolink 4K Outdoor Security Camera System w/ Night Vision",
+          "category": "Home",
+          "original_price": 219.99,
+          "sale_price": 129.0,
+          "discount_pct": 41,
+          "url": "https://www.amazon.com/dp/B08BKVY4ZC?tag=eschooldeals-20",
+          "image": "https://images-na.ssl-images-amazon.com/images/P/B08BKVY4ZC.01._SL300_.jpg",
+          "in_stock": true,
+          "is_student_relevant": false
+        },
+        {
+          "id": "B098FKXT8L",
+          "title": "Bose QuietComfort 45 Bluetooth Wireless Headphones",
+          "category": "Electronics",
+          "original_price": 299.99,
+          "sale_price": 134.0,
+          "discount_pct": 55,
+          "url": "https://www.amazon.com/dp/B098FKXT8L?tag=eschooldeals-20",
+          "image": "https://images-na.ssl-images-amazon.com/images/P/B098FKXT8L.01._SL300_.jpg",
+          "in_stock": true,
+          "is_student_relevant": false
+        }
+      ]
     }
   }
 ]
