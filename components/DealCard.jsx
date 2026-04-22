@@ -24,6 +24,7 @@ export default function DealCard({ deal }) {
   const savings = Math.max(original - sale, 0).toFixed(2)
   const imageSrc = deal.image || null
   const href = affiliateUrl(deal.merchant, deal.productUrl || deal.url)
+  const isAmazon = deal.merchant === 'AMAZON'
 
   return (
     <a
@@ -37,7 +38,7 @@ export default function DealCard({ deal }) {
         className="deal-thumb"
         style={{ background: deal.thumbBg || '#f5f5f7', padding: '10px' }}
       >
-        <div className="deal-pct">-{deal.discountPct}%</div>
+        {!isAmazon && <div className="deal-pct">-{deal.discountPct}%</div>}
 
         {deal.isStudentPick && (
           <div className="student-badge">STUDENT PICK</div>
@@ -62,16 +63,21 @@ export default function DealCard({ deal }) {
 
       <div className="deal-body">
         <div className="deal-merchant">{deal.merchant}</div>
-
         <div className="deal-title">{deal.title}</div>
 
         <div className="deal-pricing">
-          <div className="deal-price-row">
-            <span className="deal-sale">${sale.toFixed(2)}</span>
-            <span className="deal-original">${original.toFixed(2)}</span>
-          </div>
+          {isAmazon ? (
+            <div className="deal-save">View current price on Amazon</div>
+          ) : (
+            <>
+              <div className="deal-price-row">
+                <span className="deal-sale">${sale.toFixed(2)}</span>
+                <span className="deal-original">${original.toFixed(2)}</span>
+              </div>
 
-          <div className="deal-save">Save ${savings}</div>
+              <div className="deal-save">Save ${savings}</div>
+            </>
+          )}
         </div>
       </div>
     </a>
