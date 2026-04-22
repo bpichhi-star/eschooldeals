@@ -1,7 +1,3 @@
-// ─── AFFILIATE TAG MAP ────────────────────────────────────────────────────────
-// All affiliate logic lives here. deals.js only stores raw productUrl.
-// To add a new merchant program: add a case below and return the wrapped URL.
-
 const AMZN_TAG = 'eschooldeals-20'
 const WOOT_CID = '7936037'
 const WOOT_AID = '4909784'
@@ -12,11 +8,6 @@ function affiliateUrl(merchant, productUrl) {
       return `${productUrl}${productUrl.includes('?') ? '&' : '?'}tag=${AMZN_TAG}`
     case 'WOOT':
       return `https://www.anrdoezrs.net/click-${WOOT_CID}-${WOOT_AID}?url=${encodeURIComponent(productUrl)}`
-    // Add future programs here:
-    // case 'BEST BUY':  return CJ or Rakuten wrapper
-    // case 'WALMART':   return Impact wrapper
-    // case 'TARGET':    return Impact wrapper
-    // case 'EBAY':      return EPN wrapper
     default:
       return productUrl
   }
@@ -43,21 +34,41 @@ export default function DealCard({ deal }) {
         style={{ background: deal.thumbBg, padding: '10px' }}
       >
         <div className="deal-pct">-{deal.discountPct}%</div>
+
         {deal.isStudentPick && (
           <div className="student-badge">STUDENT PICK</div>
         )}
+
         {proxiedImage && (
-          <img src={proxiedImage} alt={deal.title} className="deal-img" />
+          <img
+            src={proxiedImage}
+            alt={deal.title}
+            className="deal-img"
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+              display: 'block',
+            }}
+          />
         )}
       </div>
-      <div className="deal-info">
+
+      <div className="deal-body">
         <div className="deal-merchant">{deal.merchant}</div>
+
         <div className="deal-title">{deal.title}</div>
+
         <div className="deal-pricing">
-          <span className="deal-sale">${deal.salePrice.toFixed(2)}</span>
-          <span className="deal-orig">${deal.originalPrice.toFixed(2)}</span>
+          <div className="deal-price-row">
+            <span className="deal-sale">${deal.salePrice.toFixed(2)}</span>
+            <span className="deal-original">
+              ${deal.originalPrice.toFixed(2)}
+            </span>
+          </div>
+
+          <div className="deal-save">Save ${savings}</div>
         </div>
-        <div className="deal-save">Save ${savings}</div>
       </div>
     </a>
   )
