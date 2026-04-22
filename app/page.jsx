@@ -1,12 +1,12 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import NavBar from '@/components/NavBar'
 import CategoryNav from '@/components/CategoryNav'
 import PromoStrip from '@/components/PromoStrip'
 import DealCard from '@/components/DealCard'
 import AdSidebar from '@/components/AdSidebar'
-import { categories, deals } from '@/lib/deals'
+import { categories, deals as fallbackDeals } from '@/lib/deals'
 
 function getToday() {
   return new Date().toLocaleDateString('en-US', {
@@ -24,9 +24,36 @@ export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState('Today')
   const [draftQuery, setDraftQuery] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [allDeals, setAllDeals] = useState(fallbackDeals)
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadDeals() {
+      try {
+        const res = await fetch('/api/deals', { cache: 'no-store' })
+        if (!res.ok) return
+
+        const data = await res.json()
+        if (!isMounted) return
+
+        if (Array.isArray(data?.deals) && data.deals.length > 0) {
+          setAllDeals(data.deals)
+        }
+      } catch {
+        // Keep fallback deals from lib/deals.js when API is unavailable.
+      }
+    }
+
+    loadDeals()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const filteredDeals = useMemo(() => {
-    return deals.filter((deal) => {
+    return allDeals.filter((deal) => {
       const matchesCategory =
         activeCategory === 'Today' || deal.category === activeCategory
 
@@ -39,7 +66,7 @@ export default function HomePage() {
 
       return matchesCategory && matchesSearch
     })
-  }, [activeCategory, searchQuery])
+  }, [activeCategory, searchQuery, allDeals])
 
   function handleSearchSubmit(e) {
     e.preventDefault()
