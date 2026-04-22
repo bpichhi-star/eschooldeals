@@ -1,12 +1,12 @@
-'use client'
-
-import { useEffect, useMemo, useState } from 'react'
 import NavBar from '@/components/NavBar'
 import CategoryNav from '@/components/CategoryNav'
 import PromoStrip from '@/components/PromoStrip'
 import DealCard from '@/components/DealCard'
 import AdSidebar from '@/components/AdSidebar'
-import { categories, deals as fallbackDeals } from '@/lib/deals'
+import { categories } from '@/lib/deals'
+import { getHomepageDeals } from '@/lib/queries/getHomepageDeals'
+
+export const dynamic = 'force-dynamic'
 
 function getToday() {
   return new Date().toLocaleDateString('en-US', {
@@ -17,92 +17,44 @@ function getToday() {
   })
 }
 
-export default function HomePage() {
+export default async function HomePage() {
   const today = getToday()
   const visibleCategories = categories.slice(0, 10)
-
-  const [activeCategory, setActiveCategory] = useState('Today')
-  const [draftQuery, setDraftQuery] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [allDeals, setAllDeals] = useState(fallbackDeals)
-
-  useEffect(() => {
-    let isMounted = true
-
-    async function loadDeals() {
-      try {
-        const res = await fetch('/api/deals', { cache: 'no-store' })
-        if (!res.ok) return
-
-        const data = await res.json()
-        if (!isMounted) return
-
-        if (Array.isArray(data?.deals) && data.deals.length > 0) {
-          setAllDeals(data.deals)
-        }
-      } catch {
-        // Keep fallback deals from lib/deals.js when API is unavailable.
-      }
-    }
-
-    loadDeals()
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
-
-  const filteredDeals = useMemo(() => {
-    return allDeals.filter((deal) => {
-      const matchesCategory =
-        activeCategory === 'Today' || deal.category === activeCategory
-
-      const q = searchQuery.trim().toLowerCase()
-      const matchesSearch =
-        q.length === 0 ||
-        deal.title.toLowerCase().includes(q) ||
-        deal.merchant.toLowerCase().includes(q) ||
-        deal.category.toLowerCase().includes(q)
-
-      return matchesCategory && matchesSearch
-    })
-  }, [activeCategory, searchQuery, allDeals])
-
-  function handleSearchSubmit(e) {
-    e.preventDefault()
-    setSearchQuery(draftQuery)
-  }
-
-  function handleCategorySelect(category) {
-    setActiveCategory(category)
-  }
+  const allDeals = await getHomepageDeals()
 
   return (
     <>
       <NavBar />
       <CategoryNav
         categories={visibleCategories}
-        activeCategory={activeCategory}
-        onSelectCategory={handleCategorySelect}
+        activeCategory="Today"
+        onSelectCategory={() => {}}
       />
 
       <section className="search-row" aria-label="Search deals">
-        <form className="search-row-inner" onSubmit={handleSearchSubmit}>
+        <form className="search-row-inner">
           <div className="searchbar">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <circle cx="6.5" cy="6.5" r="4.5" stroke="#aeaeb2" strokeWidth="1.5" />
-              <line x1="10" y1="10" x2="14.5" y2="14.5" stroke="#aeaeb2" strokeWidth="1.5" strokeLinecap="round" />
+              <line
+                x1="10"
+                y1="10"
+                x2="14.5"
+                y2="14.5"
+                stroke="#aeaeb2"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
             </svg>
             <input
               type="text"
               placeholder="Search deals, stores, products..."
               aria-label="Search deals"
-              value={draftQuery}
-              onChange={(e) => setDraftQuery(e.target.value)}
+              disabled
             />
           </div>
 
-          <button className="alert-btn" type="submit">
+          <button className="alert-btn" type="button">
             Search
           </button>
         </form>
@@ -111,17 +63,15 @@ export default function HomePage() {
       <div className="page-wrap">
         <main>
           <div className="section-header">
-            <h1 className="section-title">
-              {activeCategory === 'Today' ? "Today's Deals" : activeCategory}
-            </h1>
+            <h1 className="section-title">Today's Deals</h1>
             <span className="section-date">{today}</span>
           </div>
 
-          <PromoStrip />
+          <PromoStrip deals={allDeals.slice(0, 4)} />
 
-          {filteredDeals.length > 0 ? (
+          {allDeals.length > 0 ? (
             <div className="deal-grid">
-              {filteredDeals.map((deal) => (
+              {allDeals.map((deal) => (
                 <DealCard key={deal.id} deal={deal} />
               ))}
             </div>
@@ -136,7 +86,7 @@ export default function HomePage() {
                 color: '#6e6e73',
               }}
             >
-              No deals found for that search.
+              No live deals found.
             </div>
           )}
         </main>
