@@ -1,15 +1,17 @@
-import { promoDeals } from '@/lib/deals'
+export default function PromoStrip({ deals = [] }) {
+  if (!Array.isArray(deals) || deals.length === 0) {
+    return null
+  }
 
-export default function PromoStrip() {
   return (
     <div className="promo-strip">
       <span className="promo-label">PROMOTED</span>
 
       <div className="promo-cards">
-        {promoDeals.map((deal) => (
+        {deals.map((deal) => (
           <a
             key={deal.id}
-            href={deal.url}
+            href={deal.url || deal.productUrl}
             className="promo-card"
             target="_blank"
             rel="noopener noreferrer"
@@ -17,7 +19,7 @@ export default function PromoStrip() {
             <div
               className="promo-thumb"
               style={{
-                background: deal.thumbBg,
+                background: deal.thumbBg || '#f5f5f7',
                 padding: '6px',
               }}
             >
@@ -36,7 +38,7 @@ export default function PromoStrip() {
             </div>
 
             <div className="promo-name">{deal.title}</div>
-            <div className="promo-price">${deal.price}</div>
+            <div className="promo-price">${Number(deal.salePrice || 0).toFixed(2)}</div>
           </a>
         ))}
       </div>
