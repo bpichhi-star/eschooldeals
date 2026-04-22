@@ -20,10 +20,11 @@ export default function DealCard({ deal }) {
         {deal.isStudentPick && (
           <div className="student-badge">STUDENT PICK</div>
         )}
-        {proxiedImage ? (
+        {proxiedImage && (
           <img
             src={proxiedImage}
             alt={deal.title}
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
             style={{
               maxWidth: '100%',
               maxHeight: '100%',
@@ -31,7 +32,7 @@ export default function DealCard({ deal }) {
               display: 'block',
             }}
           />
-        ) : null}
+        )}
       </div>
 
       <div className="deal-body">
