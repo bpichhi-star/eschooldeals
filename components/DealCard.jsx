@@ -3,7 +3,7 @@ export default function DealCard({ deal }) {
   const origPrice   = deal.originalPrice ?? deal.original_price ?? 0
   const savings     = (origPrice - salePrice).toFixed(2)
   const discountPct = origPrice > 0 ? Math.round((1 - salePrice / origPrice) * 100) : 0
-  const imageUrl    = deal.imageUrl ?? deal.image_url ?? ''
+  const imageUrl    = deal.image ?? deal.imageUrl ?? deal.image_url ?? ''
   const merchant    = deal.merchant ?? deal.store ?? 'Amazon'
 
   return (
