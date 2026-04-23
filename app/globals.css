@@ -199,29 +199,30 @@ button {
 /* â”€â”€ PROMO STRIP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .promo-strip {
   background: #fff;
-  border-radius: var(--radius-md);
+  border-radius: 11px;
   border: 0.5px solid var(--border);
-  padding: 11px 13px;
-  margin-bottom: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
 .promo-label {
-  font-size: 7.5px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
   color: var(--text-tertiary);
   writing-mode: vertical-lr;
   transform: rotate(180deg);
   white-space: nowrap;
   flex-shrink: 0;
+  text-transform: uppercase;
 }
 
 .promo-cards {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex: 1;
   overflow-x: auto;
   scrollbar-width: none;
@@ -232,14 +233,16 @@ button {
 }
 
 .promo-card {
-  flex: 1;
-  min-width: 100px;
+  flex-shrink: 0;
+  width: 110px;
   background: var(--bg-surface);
   border-radius: 8px;
-  padding: 9px 10px;
-  text-align: center;
-  cursor: pointer;
-  transition: background 0.15s;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.12s;
+  display: flex;
+  flex-direction: column;
 }
 
 .promo-card:hover {
@@ -247,29 +250,60 @@ button {
 }
 
 .promo-thumb {
-  height: 38px;
-  border-radius: 6px;
-  margin-bottom: 6px;
+  position: relative;
+  height: 72px;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.promo-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 8px;
+}
+
+.promo-pct {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: #FF3B30;
+  color: #fff;
+  font-size: 7px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
 }
 
 .promo-name {
   font-size: 8.5px;
   color: var(--text-secondary);
   line-height: 1.35;
-  margin-bottom: 3px;
+  padding: 5px 7px 2px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  flex: 1;
 }
 
 .promo-price {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-primary);
+  padding: 3px 7px 8px;
+  letter-spacing: -0.3px;
+}
+
+.deals-loading {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  padding: 40px 0;
+  text-align: center;
 }
 
 /* â”€â”€ DEAL GRID â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -282,69 +316,56 @@ button {
 /* â”€â”€ DEAL CARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .deal-card {
   background: var(--bg-card);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 0.5px solid var(--border);
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.12s, box-shadow 0.12s;
+  transition: transform 0.15s, box-shadow 0.15s;
   display: flex;
   flex-direction: column;
-  text-decoration: none;
-  color: inherit;
-  position: relative;
 }
 
 .deal-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
 }
 
 .deal-thumb {
   position: relative;
-  height: 112px;
-  background: var(--bg-surface);
+  height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  overflow: hidden;
-}
-
-.deal-thumb-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  padding: 10px;
 }
 
 .deal-pct {
   position: absolute;
-  top: 6px;
-  left: 6px;
-  background: #FF3B30;
+  top: 7px;
+  left: 7px;
+  background: var(--accent);
   color: #fff;
-  font-size: 8.5px;
-  font-weight: 800;
+  font-size: 7.5px;
+  font-weight: 700;
   padding: 2px 5px;
   border-radius: 4px;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.3px;
 }
 
 .student-badge {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  background: #FF9500;
+  top: 7px;
+  right: 7px;
+  background: #1d1d1f;
   color: #fff;
-  font-size: 7px;
-  font-weight: 800;
+  font-size: 6.5px;
+  font-weight: 700;
   padding: 2px 5px;
   border-radius: 4px;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .deal-body {
-  padding: 8px 9px 10px;
+  padding: 9px 10px 11px;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -355,13 +376,11 @@ button {
   font-weight: 700;
   letter-spacing: 1.2px;
   color: var(--text-tertiary);
-  margin-bottom: 3px;
-  text-transform: uppercase;
+  margin-bottom: 4px;
 }
 
 .deal-title {
-  font-size: 10.5px;
-  font-weight: 500;
+  font-size: 9.5px;
   color: var(--text-primary);
   line-height: 1.38;
   margin-bottom: 8px;
@@ -370,7 +389,7 @@ button {
   -webkit-box-orient: vertical;
   overflow: hidden;
   flex: 1;
-  min-height: 42px;
+  min-height: 38px;
 }
 
 .deal-pricing {
@@ -381,44 +400,24 @@ button {
   display: flex;
   align-items: baseline;
   gap: 5px;
-  margin-bottom: 1px;
 }
 
 .deal-sale {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.5px;
-  line-height: 1;
 }
 
 .deal-original {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--text-tertiary);
   text-decoration: line-through;
 }
 
 .deal-save {
-  font-size: 9px;
+  font-size: 8.5px;
   color: var(--green);
-  font-weight: 600;
-  margin-bottom: 7px;
-}
-
-.deal-cta {
-  display: block;
-  background: #0071e3;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 6px 0;
-  border-radius: 6px;
-  text-align: center;
-  letter-spacing: 0.1px;
-}
-
-.deal-card:hover .deal-cta {
-  background: #0077ED;
+  margin-top: 2px;
 }
 
 /* â”€â”€ STUDENT HUB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
