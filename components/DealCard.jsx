@@ -11,16 +11,22 @@ export default function DealCard({ deal }) {
       <div className="deal-thumb">
         {imageUrl && (
           <img
-            src={`/api/img?url=${encodeURIComponent(imageUrl)}`}
+            src={imageUrl}
             alt={deal.title}
             className="deal-thumb-img"
-            onError={e => { e.currentTarget.style.display = 'none' }}
+            onError={(e) => {
+              const proxy = `/api/img?url=${encodeURIComponent(imageUrl)}`
+              if (e.currentTarget.src !== proxy) {
+                e.currentTarget.src = proxy
+              } else {
+                e.currentTarget.style.display = 'none'
+              }
+            }}
           />
         )}
         {discountPct > 0 && <div className="deal-pct">-{discountPct}%</div>}
         {deal.isStudentPick && <div className="student-badge">STUDENT PICK</div>}
       </div>
-
       <div className="deal-body">
         <div className="deal-merchant">{merchant}</div>
         <div className="deal-title">{deal.title}</div>
