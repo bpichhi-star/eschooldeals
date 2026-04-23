@@ -14,7 +14,7 @@ function getToday() {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
-  })
+  }).toUpperCase()
 }
 
 export default function HomePage() {
@@ -41,14 +41,16 @@ export default function HomePage() {
       <NavBar />
       <CategoryNav />
 
+      {/* FEATURED strip comes first */}
+      <PromoStrip deals={safeDeals} />
+
       <div className="page-wrap">
         <main>
+          {/* Today's Deals header sits BELOW the featured strip */}
           <div className="section-header">
             <h1 className="section-title">Today's Deals</h1>
             <span className="section-date">{today}</span>
           </div>
-
-          <PromoStrip deals={safeDeals} />
 
           {loading ? (
             <div className="deals-loading">Loading live deals...</div>
