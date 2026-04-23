@@ -3,86 +3,85 @@ const WOOT_CID = '7936037'
 const WOOT_AID = '4909784'
 
 function affiliateUrl(merchant, productUrl) {
-    if (!productUrl) return '#'
-    switch (merchant) {
-      case 'AMAZON':
-              if (productUrl.includes('tag=')) return productUrl
-              return `${productUrl}${productUrl.includes('?') ? '&' : '?'}tag=${AMZN_TAG}`
-      case 'WOOT':
-              return `https://www.anrdoezrs.net/click-${WOOT_CID}-${WOOT_AID}?url=${encodeURIComponent(productUrl)}`
-      default:
-              return productUrl
-    }
+  if (!productUrl) return '#'
+  switch (merchant) {
+    case 'AMAZON':
+      if (productUrl.includes('tag=')) return productUrl
+      return productUrl + (productUrl.includes('?') ? '&' : '?') + 'tag=' + AMZN_TAG
+    case 'WOOT':
+      return 'https://www.anrdoezrs.net/click-' + WOOT_CID + '-' + WOOT_AID + '?url=' + encodeURIComponent(productUrl)
+    default:
+      return productUrl
+  }
 }
 
 function proxyImageUrl(src) {
-    if (!src) return null
-    // Route through our server-side image proxy to avoid CORS/referrer issues
-  return `/api/img?url=${encodeURIComponent(src)}`
+  if (!src) return null
+  return '/api/img?url=' + encodeURIComponent(src)
 }
 
 export default function DealCard({ deal }) {
-    const original = Number(deal.originalPrice || 0)
-    const sale = Number(deal.salePrice || 0)
-    const savings = Math.max(original - sale, 0).toFixed(2)
-    const imageSrc = deal.image ? proxyImageUrl(deal.image) : null
-    const href = affiliateUrl(deal.merchant, deal.productUrl || deal.url)
-    const hasDiscount = original > 0 && sale > 0 && original > sale
+  const original = Number(deal.originalPrice || 0)
+  const sale = Number(deal.salePrice || 0)
+  const savings = (Math.max(original - sale, 0)).toFixed(2)
+  const imageSrc = deal.image ? proxyImageUrl(deal.image) : null
+  const href = affiliateUrl(deal.merchant, deal.productUrl || deal.url)
+  const hasDiscount = original > 0 && sale > 0 && original > sale
 
   return (
-        <a
-                href={href}
-                className="deal-card"
-                aria-label={deal.title}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-              <div
-                        className="deal-thumb"
-                        style={{ background: deal.thumbBg || '#f5f5f7', padding: '10px' }}
-                      >
-                {!deal.merchant?.includes('AMAZON') && (
-                                  <div className="deal-pct">-{deal.discountPct}%</div>div>
-                      )}
-                {deal.isStudentPick && (
-                                  <div className="student-badge">STUDENT PICK</div>div>
-                      )}
-                {imageSrc && (
-                                  <img
-                                                src={imageSrc}
-                                                alt={deal.title}
-                                                className="deal-img"
-                                                loading="lazy"
-                                                style={{
-                                                                maxWidth: '100%',
-                                                                maxHeight: '100%',
-                                                                objectFit: 'contain',
-                                                                display: 'block',
-                                                }}
-                                              />
-                                )}
-              </div>div>
-              <div className="deal-body">
-                      <div className="deal-merchant">{deal.merchant}</div>div>
-                      <div className="deal-title">{deal.title}</div>div>
-                      <div className="deal-pricing">
-                        {sale > 0 ? (
-                            <>
-                                          <div className="deal-price-row">
-                                                          <span className="deal-sale">${sale.toFixed(2)}</span>span>
-                                            {hasDiscount && (
-                                                <span className="deal-original">${original.toFixed(2)}</span>span>
-                                                          )}
-                                          </div>div>
-                              {hasDiscount && (
-                                              <div className="deal-save">Save ${savings}</div>div>
-                                          )}
-                            </>>
-                          ) : (
-                            <div className="deal-save">View current price on Amazon</div>div>
-                                )}
-                      </div>div>
-              </div>div>
-        </a>a>
-      )
-}</></a>
+    <a
+      href={href}
+      className="deal-card"
+      aria-label={deal.title}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <div
+        className="deal-thumb"
+        style={{ background: deal.thumbBg || '#f5f5f7', padding: '10px' }}
+      >
+        {!deal.merchant?.includes('AMAZON') && (
+          <div className="deal-pct">-{deal.discountPct}%</div>
+        )}
+        {deal.isStudentPick && (
+          <div className="student-badge">STUDENT PICK</div>
+        )}
+        {imageSrc && (
+          <img
+            src={imageSrc}
+            alt={deal.title}
+            className="deal-img"
+            loading="lazy"
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+              display: 'block',
+            }}
+          />
+        )}
+      </div>
+      <div className="deal-body">
+        <div className="deal-merchant">{deal.merchant}</div>
+        <div className="deal-title">{deal.title}</div>
+        <div className="deal-pricing">
+          {sale > 0 ? (
+            <>
+              <div className="deal-price-row">
+                <span className="deal-sale">{'$' + sale.toFixed(2)}</span>
+                {hasDiscount && (
+                  <span className="deal-original">{'$' + original.toFixed(2)}</span>
+                )}
+              </div>
+              {hasDiscount && (
+                <div className="deal-save">Save {'$' + savings}</div>
+              )}
+            </>
+          ) : (
+            <div className="deal-save">View current price on Amazon</div>
+          )}
+        </div>
+      </div>
+    </a>
+  )
+}
