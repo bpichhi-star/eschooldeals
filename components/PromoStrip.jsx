@@ -1,3 +1,16 @@
+const AMZN_TAG = 'eschooldeals-20'
+
+function affiliateUrl(merchant, productUrl) {
+  if (!productUrl) return '#'
+  switch (merchant) {
+    case 'AMAZON':
+      if (productUrl.includes('tag=')) return productUrl
+      return `${productUrl}${productUrl.includes('?') ? '&' : '?'}tag=${AMZN_TAG}`
+    default:
+      return productUrl
+  }
+}
+
 export default function PromoStrip({ deals = [] }) {
   if (!Array.isArray(deals) || deals.length === 0) {
     return null
@@ -8,14 +21,13 @@ export default function PromoStrip({ deals = [] }) {
       <span className="promo-label">PROMOTED</span>
       <div className="promo-cards">
         {deals.map((deal) => {
-          const label = deal.merchant === 'AMAZON'
-            ? 'Check price'
-            : `$${Number(deal.salePrice || 0).toFixed(2)}`
+          const salePrice = Number(deal.salePrice || 0)
+          const href = affiliateUrl(deal.merchant, deal.productUrl || deal.url)
 
           return (
             <a
               key={deal.id}
-              href={deal.url || deal.productUrl}
+              href={href}
               className="promo-card"
               target="_blank"
               rel="noopener noreferrer"
@@ -41,7 +53,9 @@ export default function PromoStrip({ deals = [] }) {
                 ) : null}
               </div>
               <div className="promo-name">{deal.title}</div>
-              <div className="promo-price">{label}</div>
+              <div className="promo-price">
+                {salePrice > 0 ? `$${salePrice.toFixed(2)}` : 'Check price'}
+              </div>
             </a>
           )
         })}
