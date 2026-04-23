@@ -1,99 +1,99 @@
 [
-    {
-          "key": "amazon",
-          "label": "Amazon",
-          "type": "feed",
-          "enabled": true,
-          "config": {
-                  "merchant": "AMAZON",
-                  "mode": "mockItems",
-                  "affiliateTag": "eschooldeals-20",
-                  "mockItems": [
-                            {
-                                        "id": "B09XS7JWHH",
-                                        "title": "Apple AirPods Pro (2nd Generation) Wireless Earbuds",
-                                        "category": "Electronics",
-                                        "sale_price": 189.99,
-                                        "original_price": 249.00,
-                                        "discount_pct": 24,
-                                        "product_url": "https://www.amazon.com/dp/B09XS7JWHH?tag=eschooldeals-20",
-                                        "image_url": "https://m.media-amazon.com/images/I/61SUj2aKoEL._AC_SL1500_.jpg",
-                                        "in_stock": true,
-                                        "is_student_relevant": true
-                            },
-                            {
-                                        "id": "B0C6BGWB3M",
-                                        "title": "Samsung 65-Inch Class QLED 4K Smart TV",
-                                        "category": "Electronics",
-                                        "sale_price": 697.99,
-                                        "original_price": 999.99,
-                                        "discount_pct": 30,
-                                        "product_url": "https://www.amazon.com/dp/B0C6BGWB3M?tag=eschooldeals-20",
-                                        "image_url": "https://m.media-amazon.com/images/I/71pvaYjaBwL._AC_SL1500_.jpg",
-                                        "in_stock": true,
-                                        "is_student_relevant": false
-                            },
-                            {
-                                        "id": "B09NQXS8XJ",
-                                        "title": "Logitech MX Master 3S Wireless Mouse",
-                                        "category": "Computers",
-                                        "sale_price": 79.99,
-                                        "original_price": 99.99,
-                                        "discount_pct": 20,
-                                        "product_url": "https://www.amazon.com/dp/B09NQXS8XJ?tag=eschooldeals-20",
-                                        "image_url": "https://m.media-amazon.com/images/I/61ni3t1ryQL._AC_SL1500_.jpg",
-                                        "in_stock": true,
-                                        "is_student_relevant": true
-                            },
-                            {
-                                        "id": "B00ET5VMTU",
-                                        "title": "Anker 60W 6-Port USB Charging Hub",
-                                        "category": "Electronics",
-                                        "sale_price": 35.99,
-                                        "original_price": 49.99,
-                                        "discount_pct": 28,
-                                        "product_url": "https://www.amazon.com/dp/B00ET5VMTU?tag=eschooldeals-20",
-                                        "image_url": "https://m.media-amazon.com/images/I/61ioVD57fmL._AC_SL1000_.jpg",
-                                        "in_stock": true,
-                                        "is_student_relevant": false
-                            },
-                            {
-                                        "id": "B092DWFJWQ",
-                                        "title": "Instant Pot Duo 7-in-1 Electric Pressure Cooker, 6 Quart",
-                                        "category": "Kitchen",
-                                        "sale_price": 59.95,
-                                        "original_price": 99.95,
-                                        "discount_pct": 40,
-                                        "product_url": "https://www.amazon.com/dp/B092DWFJWQ?tag=eschooldeals-20",
-                                        "image_url": "https://m.media-amazon.com/images/I/71WtwEvYDOS._AC_SL1500_.jpg",
-                                        "in_stock": true,
-                                        "is_student_relevant": true
-                            },
-                            {
-                                        "id": "B08BKVY4ZC",
-                                        "title": "Amazon Echo Dot (4th Gen) Smart Speaker with Alexa",
-                                        "category": "Electronics",
-                                        "sale_price": 22.99,
-                                        "original_price": 49.99,
-                                        "discount_pct": 54,
-                                        "product_url": "https://www.amazon.com/dp/B08BKVY4ZC?tag=eschooldeals-20",
-                                        "image_url": "https://m.media-amazon.com/images/I/714Rq4k05UL._AC_SL1000_.jpg",
-                                        "in_stock": true,
-                                        "is_student_relevant": false
-                            },
-                            {
-                                        "id": "B098FKXT8L",
-                                        "title": "Bose QuietComfort 45 Bluetooth Noise Cancelling Headphones",
-                                        "category": "Electronics",
-                                        "sale_price": 229.00,
-                                        "original_price": 329.00,
-                                        "discount_pct": 30,
-                                        "product_url": "https://www.amazon.com/dp/B098FKXT8L?tag=eschooldeals-20",
-                                        "image_url": "https://m.media-amazon.com/images/I/51cg3RIRHYL._AC_SL1500_.jpg",
-                                        "in_stock": true,
-                                        "is_student_relevant": true
-                            }
-                  ]
-          }
-    }
+      {
+              "key": "amazon",
+              "label": "Amazon",
+              "type": "feed",
+              "enabled": true,
+              "config": {
+                        "merchant": "AMAZON",
+                        "mode": "mockItems",
+                        "affiliateTag": "eschooldeals-20",
+                        "mockItems": [
+                                    {
+                                                  "id": "B09XS7JWHH",
+                                                  "title": "Apple AirPods Pro (2nd Generation) Wireless Earbuds",
+                                                  "category": "Electronics",
+                                                  "sale_price": 189.99,
+                                                  "original_price": 249.00,
+                                                  "discount_pct": 24,
+                                                  "product_url": "https://www.amazon.com/dp/B09XS7JWHH?tag=eschooldeals-20",
+                                                  "image_url": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B09XS7JWHH&Format=_SL250_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822&WS=1&tag=eschooldeals-20",
+                                                  "in_stock": true,
+                                                  "is_student_relevant": true
+                                    },
+                                    {
+                                                  "id": "B0C6BGWB3M",
+                                                  "title": "Samsung 65-Inch Class QLED 4K Smart TV",
+                                                  "category": "Electronics",
+                                                  "sale_price": 697.99,
+                                                  "original_price": 999.99,
+                                                  "discount_pct": 30,
+                                                  "product_url": "https://www.amazon.com/dp/B0C6BGWB3M?tag=eschooldeals-20",
+                                                  "image_url": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B0C6BGWB3M&Format=_SL250_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822&WS=1&tag=eschooldeals-20",
+                                                  "in_stock": true,
+                                                  "is_student_relevant": false
+                                    },
+                                    {
+                                                  "id": "B09NQXS8XJ",
+                                                  "title": "Logitech MX Master 3S Wireless Mouse",
+                                                  "category": "Computers",
+                                                  "sale_price": 79.99,
+                                                  "original_price": 99.99,
+                                                  "discount_pct": 20,
+                                                  "product_url": "https://www.amazon.com/dp/B09NQXS8XJ?tag=eschooldeals-20",
+                                                  "image_url": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B09NQXS8XJ&Format=_SL250_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822&WS=1&tag=eschooldeals-20",
+                                                  "in_stock": true,
+                                                  "is_student_relevant": true
+                                    },
+                                    {
+                                                  "id": "B00ET5VMTU",
+                                                  "title": "Anker 60W 6-Port USB Charging Hub",
+                                                  "category": "Electronics",
+                                                  "sale_price": 35.99,
+                                                  "original_price": 49.99,
+                                                  "discount_pct": 28,
+                                                  "product_url": "https://www.amazon.com/dp/B00ET5VMTU?tag=eschooldeals-20",
+                                                  "image_url": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B00ET5VMTU&Format=_SL250_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822&WS=1&tag=eschooldeals-20",
+                                                  "in_stock": true,
+                                                  "is_student_relevant": false
+                                    },
+                                    {
+                                                  "id": "B092DWFJWQ",
+                                                  "title": "Instant Pot Duo 7-in-1 Electric Pressure Cooker, 6 Quart",
+                                                  "category": "Kitchen",
+                                                  "sale_price": 59.95,
+                                                  "original_price": 99.95,
+                                                  "discount_pct": 40,
+                                                  "product_url": "https://www.amazon.com/dp/B092DWFJWQ?tag=eschooldeals-20",
+                                                  "image_url": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B092DWFJWQ&Format=_SL250_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822&WS=1&tag=eschooldeals-20",
+                                                  "in_stock": true,
+                                                  "is_student_relevant": true
+                                    },
+                                    {
+                                                  "id": "B08BKVY4ZC",
+                                                  "title": "Amazon Echo Dot (4th Gen) Smart Speaker with Alexa",
+                                                  "category": "Electronics",
+                                                  "sale_price": 22.99,
+                                                  "original_price": 49.99,
+                                                  "discount_pct": 54,
+                                                  "product_url": "https://www.amazon.com/dp/B08BKVY4ZC?tag=eschooldeals-20",
+                                                  "image_url": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B08BKVY4ZC&Format=_SL250_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822&WS=1&tag=eschooldeals-20",
+                                                  "in_stock": true,
+                                                  "is_student_relevant": false
+                                    },
+                                    {
+                                                  "id": "B098FKXT8L",
+                                                  "title": "Bose QuietComfort 45 Bluetooth Noise Cancelling Headphones",
+                                                  "category": "Electronics",
+                                                  "sale_price": 229.00,
+                                                  "original_price": 329.00,
+                                                  "discount_pct": 30,
+                                                  "product_url": "https://www.amazon.com/dp/B098FKXT8L?tag=eschooldeals-20",
+                                                  "image_url": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B098FKXT8L&Format=_SL250_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822&WS=1&tag=eschooldeals-20",
+                                                  "in_stock": true,
+                                                  "is_student_relevant": true
+                                    }
+                        ]
+              }
+      }
 ]
