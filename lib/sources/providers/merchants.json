@@ -17,21 +17,21 @@
           "original_price": 249.00,
           "discount_pct": 24,
           "product_url": "https://www.amazon.com/dp/B09XS7JWHH?tag=eschooldeals-20",
-          "image_url": "https://m.media-amazon.com/images/I/61SUj2aKoEL._AC_SL300_.jpg",
+          "image_url": "https://m.media-amazon.com/images/I/61SUj2aKoEL._AC_SL1500_.jpg",
           "in_stock": true,
           "is_student_relevant": true
         },
         {
-          "id": "B0C6BGWB3M",
-          "title": "Samsung 65-Inch Class QLED 4K Smart TV",
+          "id": "B08KTZ8249",
+          "title": "Kindle Paperwhite (16 GB) - The lightest and thinnest Kindle, now with a 6.8 display",
           "category": "Electronics",
-          "sale_price": 697.99,
-          "original_price": 999.99,
-          "discount_pct": 30,
-          "product_url": "https://www.amazon.com/dp/B0C6BGWB3M?tag=eschooldeals-20",
-          "image_url": "https://m.media-amazon.com/images/I/71pvaYjaBwL._AC_SL300_.jpg",
+          "sale_price": 99.99,
+          "original_price": 139.99,
+          "discount_pct": 29,
+          "product_url": "https://www.amazon.com/dp/B08KTZ8249?tag=eschooldeals-20",
+          "image_url": "https://images-na.ssl-images-amazon.com/images/P/B08KTZ8249.01._SX450_.jpg",
           "in_stock": true,
-          "is_student_relevant": false
+          "is_student_relevant": true
         },
         {
           "id": "B09NQXS8XJ",
@@ -41,21 +41,21 @@
           "original_price": 99.99,
           "discount_pct": 20,
           "product_url": "https://www.amazon.com/dp/B09NQXS8XJ?tag=eschooldeals-20",
-          "image_url": "https://m.media-amazon.com/images/I/61ni3t1ryQL._AC_SL300_.jpg",
+          "image_url": "https://m.media-amazon.com/images/I/61ni3t1ryQL._AC_SL1500_.jpg",
           "in_stock": true,
           "is_student_relevant": true
         },
         {
-          "id": "B00ET5VMTU",
-          "title": "Anker 60W 6-Port USB Charging Hub",
-          "category": "Electronics",
-          "sale_price": 35.99,
-          "original_price": 49.99,
-          "discount_pct": 28,
-          "product_url": "https://www.amazon.com/dp/B00ET5VMTU?tag=eschooldeals-20",
-          "image_url": "https://m.media-amazon.com/images/I/61ioVD57fmL._AC_SL300_.jpg",
+          "id": "B09G9FPHY6",
+          "title": "Apple iPad (9th Generation) - 10.2-inch, Wi-Fi, 64GB - Space Gray",
+          "category": "Computers",
+          "sale_price": 249.00,
+          "original_price": 329.00,
+          "discount_pct": 24,
+          "product_url": "https://www.amazon.com/dp/B09G9FPHY6?tag=eschooldeals-20",
+          "image_url": "https://images-na.ssl-images-amazon.com/images/P/B09G9FPHY6.01._SX450_.jpg",
           "in_stock": true,
-          "is_student_relevant": false
+          "is_student_relevant": true
         },
         {
           "id": "B092DWFJWQ",
@@ -65,9 +65,9 @@
           "original_price": 99.95,
           "discount_pct": 40,
           "product_url": "https://www.amazon.com/dp/B092DWFJWQ?tag=eschooldeals-20",
-          "image_url": "https://m.media-amazon.com/images/I/71WtwEvYDOS._AC_SL300_.jpg",
+          "image_url": "https://m.media-amazon.com/images/I/71WtwEvYDOS._AC_SL1500_.jpg",
           "in_stock": true,
-          "is_student_relevant": true
+          "is_student_relevant": false
         },
         {
           "id": "B08BKVY4ZC",
@@ -77,9 +77,9 @@
           "original_price": 49.99,
           "discount_pct": 54,
           "product_url": "https://www.amazon.com/dp/B08BKVY4ZC?tag=eschooldeals-20",
-          "image_url": "https://m.media-amazon.com/images/I/714Rq4k05UL._AC_SL300_.jpg",
+          "image_url": "https://m.media-amazon.com/images/I/714Rq4k05UL._AC_SL1000_.jpg",
           "in_stock": true,
-          "is_student_relevant": false
+          "is_student_relevant": true
         },
         {
           "id": "B098FKXT8L",
@@ -89,7 +89,7 @@
           "original_price": 329.00,
           "discount_pct": 30,
           "product_url": "https://www.amazon.com/dp/B098FKXT8L?tag=eschooldeals-20",
-          "image_url": "https://m.media-amazon.com/images/I/51cg3RIRHYL._AC_SL300_.jpg",
+          "image_url": "https://images-na.ssl-images-amazon.com/images/P/B098FKXT8L.01._SX450_.jpg",
           "in_stock": true,
           "is_student_relevant": true
         }
