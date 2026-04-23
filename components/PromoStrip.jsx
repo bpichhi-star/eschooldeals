@@ -1,61 +1,33 @@
-const AMZN_TAG = 'eschooldeals-20'
-
-function affiliateUrl(merchant, productUrl) {
-  if (!productUrl) return '#'
-  switch (merchant) {
-    case 'AMAZON':
-      if (productUrl.includes('tag=')) return productUrl
-      return `${productUrl}${productUrl.includes('?') ? '&' : '?'}tag=${AMZN_TAG}`
-    default:
-      return productUrl
-  }
-}
-
 export default function PromoStrip({ deals = [] }) {
-  if (!Array.isArray(deals) || deals.length === 0) {
-    return null
-  }
+  if (!deals.length) return null
 
   return (
     <div className="promo-strip">
-      <span className="promo-label">PROMOTED</span>
+      <span className="promo-label">FEATURED</span>
       <div className="promo-cards">
-        {deals.map((deal) => {
-          const salePrice = Number(deal.salePrice || 0)
-          const href = affiliateUrl(deal.merchant, deal.productUrl || deal.url)
+        {deals.slice(0, 6).map((deal) => {
+          const salePrice  = deal.salePrice  ?? deal.sale_price  ?? 0
+          const origPrice  = deal.originalPrice ?? deal.original_price ?? 0
+          const imageUrl   = deal.imageUrl ?? deal.image_url ?? ''
+          const discountPct = origPrice > 0 ? Math.round((1 - salePrice / origPrice) * 100) : 0
 
           return (
-            <a
-              key={deal.id}
-              href={href}
-              className="promo-card"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <div
-                className="promo-thumb"
-                style={{
-                  background: deal.thumbBg || '#f5f5f7',
-                  padding: '6px',
-                }}
-              >
-                {deal.image ? (
+            <a key={deal.id} href={deal.url} target="_blank" rel="noopener noreferrer" className="promo-card">
+              <div className="promo-thumb">
+                {imageUrl && (
                   <img
-                    src={deal.image}
+                    src={`/api/img?url=${encodeURIComponent(imageUrl)}`}
                     alt={deal.title}
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: '100%',
-                      objectFit: 'contain',
-                      display: 'block',
-                    }}
+                    className="promo-thumb-img"
+                    onError={e => { e.currentTarget.style.display = 'none' }}
                   />
-                ) : null}
+                )}
+                {discountPct > 0 && (
+                  <span className="promo-pct">-{discountPct}%</span>
+                )}
               </div>
               <div className="promo-name">{deal.title}</div>
-              <div className="promo-price">
-                {salePrice > 0 ? `$${salePrice.toFixed(2)}` : 'Check price'}
-              </div>
+              <div className="promo-price">${salePrice.toFixed(0)}</div>
             </a>
           )
         })}
