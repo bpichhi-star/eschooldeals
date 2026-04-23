@@ -12,6 +12,7 @@ export default function PromoStrip({ deals = [] }) {
           const salePrice   = deal.salePrice   ?? deal.sale_price   ?? 0
           const origPrice   = deal.originalPrice ?? deal.original_price ?? 0
           const imageUrl    = deal.image ?? deal.imageUrl ?? deal.image_url ?? ''
+          const proxySrc    = imageUrl ? `/api/img?url=${encodeURIComponent(imageUrl)}` : ''
           const discountPct = origPrice > 0 ? Math.round((1 - salePrice / origPrice) * 100) : 0
 
           return (
@@ -23,18 +24,13 @@ export default function PromoStrip({ deals = [] }) {
               className="promo-card"
             >
               <div className="promo-thumb">
-                {imageUrl && (
+                {proxySrc && (
                   <img
-                    src={imageUrl}
+                    src={proxySrc}
                     alt={deal.title}
                     className="promo-thumb-img"
                     onError={(e) => {
-                      const proxy = `/api/img?url=${encodeURIComponent(imageUrl)}`
-                      if (e.currentTarget.src !== proxy) {
-                        e.currentTarget.src = proxy
-                      } else {
-                        e.currentTarget.style.display = 'none'
-                      }
+                      e.currentTarget.style.display = 'none'
                     }}
                   />
                 )}
