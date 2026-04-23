@@ -26,12 +26,15 @@ export default function HomePage() {
     fetch('/api/deals')
       .then(r => r.json())
       .then(data => {
-        const list = Array.isArray(data) ? data : (data.deals ?? [])
-        setDeals(list)
+        if (Array.isArray(data)) setDeals(data)
+        else if (Array.isArray(data?.deals)) setDeals(data.deals)
+        else setDeals([])
       })
-      .catch(console.error)
+      .catch(() => setDeals([]))
       .finally(() => setLoading(false))
   }, [])
+
+  const safeDeals = Array.isArray(deals) ? deals : []
 
   return (
     <>
@@ -45,16 +48,16 @@ export default function HomePage() {
             <span className="section-date">{today}</span>
           </div>
 
-          <PromoStrip deals={deals} />
+          <PromoStrip deals={safeDeals} />
 
           {loading ? (
             <div className="deals-loading">Loading live deals...</div>
-          ) : deals.length === 0 ? (
+          ) : safeDeals.length === 0 ? (
             <div className="deals-loading">No deals found. Try refreshing.</div>
           ) : (
             <div className="deal-grid">
-              {deals.map((deal) => (
-                <DealCard key={deal.id} deal={deal} />
+              {safeDeals.map((deal) => (
+                <DealCard key={deal.id ?? deal.asin ?? Math.random()} deal={deal} />
               ))}
             </div>
           )}
