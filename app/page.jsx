@@ -43,7 +43,10 @@ export default function HomePage() {
 
       <div className="page-wrap">
         <main>
-          {/* Featured strip first — date/title sits below it */}
+          {/* Student Perks first */}
+          <StudentHub />
+
+          {/* Featured strip */}
           <PromoStrip deals={safeDeals} />
 
           <div className="section-header">
@@ -62,8 +65,6 @@ export default function HomePage() {
               ))}
             </div>
           )}
-
-          <StudentHub />
         </main>
 
         <AdSidebar />
