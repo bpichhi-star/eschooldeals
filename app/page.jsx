@@ -41,12 +41,11 @@ export default function HomePage() {
       <NavBar />
       <CategoryNav />
 
-      {/* FEATURED strip comes first */}
-      <PromoStrip deals={safeDeals} />
-
       <div className="page-wrap">
         <main>
-          {/* Today's Deals header sits BELOW the featured strip */}
+          {/* Featured strip first — date/title sits below it */}
+          <PromoStrip deals={safeDeals} />
+
           <div className="section-header">
             <h1 className="section-title">Today's Deals</h1>
             <span className="section-date">{today}</span>
