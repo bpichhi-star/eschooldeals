@@ -18,7 +18,6 @@ function getToday() {
 }
 
 export default function HomePage() {
-  const today = getToday()
   const visibleCategories = categories.slice(0, 10)
 
   const [activeCategory, setActiveCategory] = useState('Today')
@@ -26,9 +25,11 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [allDeals, setAllDeals] = useState([])
   const [loaded, setLoaded] = useState(false)
+  const [today, setToday] = useState('')
 
   useEffect(() => {
     let isMounted = true
+    setToday(getToday())
 
     async function loadDeals() {
       try {
