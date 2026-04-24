@@ -1,5 +1,4 @@
 'use client'
-
 import { useState, useEffect } from 'react'
 import NavBar from '@/components/NavBar'
 import CategoryNav from '@/components/CategoryNav'
@@ -35,25 +34,20 @@ export default function HomePage() {
   }, [])
 
   const safeDeals = Array.isArray(deals) ? deals : []
+  const featuredDeals = safeDeals.filter(d => d.isFeatured)
 
   return (
     <>
       <NavBar />
       <CategoryNav />
-
       <div className="page-wrap">
         <main>
-          {/* Student Perks first */}
           <StudentHub />
-
-          {/* Featured strip */}
-          <PromoStrip deals={safeDeals} />
-
+          <PromoStrip deals={featuredDeals} />
           <div className="section-header">
             <h1 className="section-title">Today's Deals</h1>
             <span className="section-date">{today}</span>
           </div>
-
           {loading ? (
             <div className="deals-loading">Loading live deals...</div>
           ) : safeDeals.length === 0 ? (
@@ -61,12 +55,11 @@ export default function HomePage() {
           ) : (
             <div className="deal-grid">
               {safeDeals.map((deal) => (
-                <DealCard key={deal.id ?? deal.asin ?? Math.random()} deal={deal} />
+                <DealCard key={deal.id ?? Math.random()} deal={deal} />
               ))}
             </div>
           )}
         </main>
-
         <AdSidebar />
       </div>
     </>
