@@ -34,8 +34,12 @@ export default function HomePage() {
   }, [])
 
   const safeDeals = Array.isArray(deals) ? deals : []
-  const featuredDeals = safeDeals.filter(d => d.isFeatured)
-  const gridDeals = safeDeals.filter(d => !d.isFeatured)
+
+  // Top 4 by score go to featured strip — fully dynamic, no hardcoding
+  const sorted = [...safeDeals].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+  const featuredDeals = sorted.slice(0, 4)
+  const featuredIds = new Set(featuredDeals.map(d => d.id))
+  const gridDeals = safeDeals.filter(d => !featuredIds.has(d.id))
 
   return (
     <>
