@@ -1,97 +1,69 @@
-/**
- * GET /api/cron/refresh-deals
- *
- * Called by Vercel Cron daily at 8:00 AM UTC (midnight PT).
- * Protected by CRON_SECRET.
- */
+// app/api/cron/refresh-deals/route.js
+import { fetchAmazonDeals }  from '@/lib/feeds/amazon';
+import { fetchWootDeals }    from '@/lib/feeds/woot';
+import { fetchWalmartDeals } from '@/lib/feeds/walmart';
+import { upsertDeals }       from '@/lib/db/upsertDeals';
+import { supabaseAdmin }     from '@/lib/db/supabaseAdmin';
 
-import { getSupabaseAdmin } from '@/lib/db/supabaseAdmin'
-import { fetchAmazonDeals } from '@/lib/feeds/amazon'
-import { fetchWootDeals } from '@/lib/feeds/woot'
-import { upsertDeals, expireOldDeals } from '@/lib/db/upsertDeals'
+export const runtime = 'nodejs';
+export const maxDuration = 60;
 
-export const runtime = 'nodejs'
-export const maxDuration = 60 // Vercel Pro allows up to 300s; 60s is safe
-
-export async function GET(request) {
-  // Verify Vercel cron secret
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+export async function GET(req) {
+  const auth = req.headers.get('authorization');
+  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const supabase = getSupabaseAdmin()
-  let runId = null
-
-  // Create a run record
-  try {
-    const { data: run } = await supabase
-      .from('deal_runs')
-      .insert({ trigger_type: 'cron', status: 'running' })
-      .select('id')
-      .single()
-    runId = run?.id
-  } catch (_) {}
-
-  const log = []
-  let status = 'success'
+  const startedAt = new Date();
+  console.log('[cron] refresh-deals started at', startedAt.toISOString());
 
   try {
-    // 1. Expire stale deals first
-    const expired = await expireOldDeals()
-    log.push(`Expired ${expired} old deals`)
+    const { error: expireError } = await supabaseAdmin
+      .from('deals')
+      .update({ status: 'expired' })
+      .lt('expires_at', new Date().toISOString())
+      .eq('status', 'active');
 
-    // 2. Fetch from all sources in parallel
-    const [amazonDeals, wootDeals] = await Promise.allSettled([
+    if (expireError) console.error('[cron] expire error:', expireError);
+
+    const [amazonDeals, wootDeals, walmartDeals] = await Promise.allSettled([
       fetchAmazonDeals(),
       fetchWootDeals(),
-    ])
+      fetchWalmartDeals(),
+    ]);
 
-    const allDeals = [
-      ...(amazonDeals.status === 'fulfilled' ? amazonDeals.value : []),
-      ...(wootDeals.status === 'fulfilled' ? wootDeals.value : []),
-    ]
+    const amazon  = amazonDeals.status  === 'fulfilled' ? amazonDeals.value  : [];
+    const woot    = wootDeals.status    === 'fulfilled' ? wootDeals.value    : [];
+    const walmart = walmartDeals.status === 'fulfilled' ? walmartDeals.value : [];
 
-    if (amazonDeals.status === 'rejected') {
-      log.push(`Amazon fetch failed: ${amazonDeals.reason}`)
-    }
-    if (wootDeals.status === 'rejected') {
-      log.push(`Woot fetch failed: ${wootDeals.reason}`)
-    }
+    if (amazonDeals.status  === 'rejected') console.error('[cron] amazon failed:',  amazonDeals.reason);
+    if (wootDeals.status    === 'rejected') console.error('[cron] woot failed:',    wootDeals.reason);
+    if (walmartDeals.status === 'rejected') console.error('[cron] walmart failed:', walmartDeals.reason);
 
-    log.push(`Fetched ${allDeals.length} total deals`)
+    console.log(`[cron] fetched — amazon: ${amazon.length}, woot: ${woot.length}, walmart: ${walmart.length}`);
 
-    // 3. Cap at 100 deals, ranked by score
-    const scored = allDeals
-      .filter(d => d.sale_price > 0 && d.product_url)
-      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-      .slice(0, 100)
+    const allDeals = [...amazon, ...woot, ...walmart];
+    const upserted = await upsertDeals(allDeals);
 
-    // 4. Upsert to Supabase
-    if (scored.length > 0) {
-      const result = await upsertDeals(scored, runId)
-      log.push(`Upserted ${result.count} deals`)
-    } else {
-      log.push('No deals to upsert')
-    }
+    await supabaseAdmin.from('deal_runs').insert({
+      started_at:    startedAt.toISOString(),
+      finished_at:   new Date().toISOString(),
+      amazon_count:  amazon.length,
+      woot_count:    woot.length,
+      walmart_count: walmart.length,
+      total_upserted: upserted,
+    });
+
+    return Response.json({
+      success: true,
+      amazon:  amazon.length,
+      woot:    woot.length,
+      walmart: walmart.length,
+      upserted,
+    });
 
   } catch (err) {
-    status = 'error'
-    log.push(`Fatal error: ${err.message}`)
-    console.error('[cron/refresh-deals]', err)
+    console.error('[cron] fatal error:', err);
+    return Response.json({ error: err.message }, { status: 500 });
   }
-
-  // Update run record
-  if (runId) {
-    await supabase
-      .from('deal_runs')
-      .update({
-        status,
-        notes: log.join('\n'),
-        finished_at: new Date().toISOString(),
-      })
-      .eq('id', runId)
-  }
-
-  return Response.json({ status, log })
 }
