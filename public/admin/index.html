@@ -5,234 +5,301 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>eSchoolDeals Admin</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #0e0f11;
-    --surface: #16181c;
-    --border: #2a2d35;
-    --border-light: #1f2229;
-    --text: #e8eaf0;
-    --muted: #6b7280;
-    --accent: #4ade80;
-    --accent-dim: rgba(74,222,128,0.12);
-    --danger: #f87171;
-    --danger-dim: rgba(248,113,113,0.12);
-    --warning: #fbbf24;
-    --warning-dim: rgba(251,191,36,0.1);
-    --blue: #60a5fa;
-    --blue-dim: rgba(96,165,250,0.12);
-    --purple: #a78bfa;
-    --radius: 6px;
-    --font: 'SF Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
-    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --bg: #f5f4f1;
+    --surface: #ffffff;
+    --surface-2: #fafaf8;
+    --border: #e4e2dc;
+    --border-mid: #d4d1c8;
+    --text: #1a1916;
+    --text-2: #4a4843;
+    --muted: #9a9690;
+    --accent: #1a6b3c;
+    --accent-light: #e8f5ee;
+    --accent-mid: #2d9155;
+    --danger: #c0392b;
+    --danger-light: #fdf0ee;
+    --warning: #b45309;
+    --warning-light: #fef3e2;
+    --blue: #1d4ed8;
+    --blue-light: #eff6ff;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 4px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05);
+    --shadow-lg: 0 12px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+    --font: 'DM Sans', system-ui, sans-serif;
+    --mono: 'DM Mono', ui-monospace, monospace;
   }
 
-  body {
-    font-family: var(--sans);
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    font-size: 14px;
-    line-height: 1.5;
-  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
 
-  .header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 52px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .header-left { display: flex; align-items: center; gap: 12px; }
-  .logo { font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: 0.02em; }
-  .logo span { color: var(--muted); font-weight: 400; }
-  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
-  .status-dot.connected { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
-  .status-label { font-size: 11px; color: var(--muted); font-family: var(--font); }
+  /* ── Login ── */
+  #login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); background-image: radial-gradient(circle at 20% 50%, rgba(26,107,60,0.06) 0%, transparent 60%), radial-gradient(circle at 80% 20%, rgba(29,78,216,0.04) 0%, transparent 50%); }
+  .login-wrap { width: 420px; }
+  .login-eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+  .login-logo-mark { width: 36px; height: 36px; background: var(--accent); border-radius: 9px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 15px; }
+  .login-brand { font-size: 15px; font-weight: 600; color: var(--text); }
+  .login-brand span { color: var(--muted); font-weight: 400; }
+  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 40px; box-shadow: var(--shadow-lg); }
+  .login-card h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .login-card .sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+  .login-card .field { margin-bottom: 16px; }
+  .login-error { color: var(--danger); font-size: 12px; margin-top: 10px; min-height: 16px; font-weight: 500; }
 
-  .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); padding: 0 24px; gap: 2px; }
-  .tab { padding: 10px 16px; font-size: 13px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; user-select: none; white-space: nowrap; }
-  .tab:hover { color: var(--text); }
-  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
-  .tab-count { display: inline-flex; align-items: center; justify-content: center; background: var(--border); color: var(--muted); border-radius: 10px; font-size: 11px; font-family: var(--font); min-width: 20px; height: 18px; padding: 0 6px; margin-left: 6px; }
+  /* ── Header ── */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 28px; display: flex; align-items: center; justify-content: space-between; height: 58px; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header-logo-mark { width: 28px; height: 28px; background: var(--accent); border-radius: 7px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 12px; }
+  .header-brand { font-size: 14px; font-weight: 600; color: var(--text); }
+  .header-divider { width: 1px; height: 18px; background: var(--border); }
+  .header-section { font-size: 13px; color: var(--muted); }
+  .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); transition: all 0.2s; }
+  .status-pill.connected { background: var(--accent-light); border-color: rgba(26,107,60,0.2); color: var(--accent); }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-  .main { padding: 24px; max-width: 1200px; }
+  /* ── Tabs ── */
+  .tabs { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 28px; display: flex; }
+  .tab { padding: 14px 18px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; user-select: none; display: flex; align-items: center; gap: 7px; }
+  .tab:hover { color: var(--text-2); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-count { background: var(--accent-light); color: var(--accent); border-radius: 10px; font-size: 11px; font-family: var(--mono); font-weight: 500; min-width: 20px; height: 18px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; }
+  .tab:not(.active) .tab-count { background: var(--bg); color: var(--muted); }
+
+  /* ── Main ── */
+  .main { padding: 28px; max-width: 1280px; }
   .panel { display: none; }
   .panel.active { display: block; }
 
-  .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-  .search-input { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 7px 12px; font-size: 13px; font-family: var(--sans); width: 240px; outline: none; transition: border-color 0.15s; }
-  .search-input:focus { border-color: var(--accent); }
+  .page-header { margin-bottom: 20px; display: flex; align-items: flex-start; justify-content: space-between; }
+  .page-title { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+  .page-subtitle { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+  /* ── Toolbar ── */
+  .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .search-wrap { position: relative; }
+  .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+  .search-input { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 8px 12px 8px 32px; font-size: 13px; font-family: var(--font); width: 220px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; box-shadow: var(--shadow-sm); }
+  .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,107,60,0.08); }
   .search-input::placeholder { color: var(--muted); }
-  .filter-select { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 7px 10px; font-size: 13px; font-family: var(--sans); outline: none; cursor: pointer; }
-  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; border: none; transition: opacity 0.15s, transform 0.1s; white-space: nowrap; }
+  .filter-select { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); color: var(--text-2); padding: 8px 12px; font-size: 13px; font-family: var(--font); outline: none; cursor: pointer; box-shadow: var(--shadow-sm); }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius); font-size: 13px; font-family: var(--font); font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; white-space: nowrap; }
   .btn:active { transform: scale(0.98); }
-  .btn-primary { background: var(--accent); color: #0a0a0a; }
-  .btn-primary:hover { opacity: 0.9; }
-  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
-  .btn-ghost:hover { color: var(--text); border-color: var(--text); }
-  .btn-danger { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(248,113,113,0.25); }
-  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-primary { background: var(--accent); color: white; box-shadow: 0 1px 3px rgba(26,107,60,0.3); }
+  .btn-primary:hover { background: var(--accent-mid); }
+  .btn-ghost { background: var(--surface); color: var(--text-2); border: 1.5px solid var(--border); box-shadow: var(--shadow-sm); }
+  .btn-ghost:hover { border-color: var(--border-mid); color: var(--text); }
+  .btn-danger { background: var(--danger-light); color: var(--danger); border: 1.5px solid rgba(192,57,43,0.2); }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
   .ml-auto { margin-left: auto; }
 
-  .deals-table-wrap { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  /* ── Stats ── */
+  .stats-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow-sm); }
+  .stat-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-weight: 600; color: var(--text); letter-spacing: -0.5px; font-family: var(--mono); }
+
+  /* ── Table ── */
+  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
   table { width: 100%; border-collapse: collapse; }
-  thead th { background: var(--surface); padding: 10px 12px; text-align: left; font-size: 11px; font-family: var(--font); color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  tbody tr { border-bottom: 1px solid var(--border-light); transition: background 0.1s; }
+  thead th { background: var(--surface-2); padding: 11px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.07em; text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
   tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: rgba(255,255,255,0.02); }
-  tbody tr.editing { background: rgba(74,222,128,0.04); }
-  td { padding: 10px 12px; vertical-align: middle; }
+  tbody tr:hover { background: var(--surface-2); }
+  tbody tr.editing { background: var(--accent-light); }
+  td { padding: 12px 16px; vertical-align: middle; }
 
-  .deal-img { width: 44px; height: 44px; object-fit: cover; border-radius: 4px; background: var(--border); flex-shrink: 0; }
-  .deal-img-placeholder { width: 44px; height: 44px; border-radius: 4px; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-  .deal-title-cell { display: flex; align-items: center; gap: 10px; }
-  .deal-title-text { font-size: 13px; color: var(--text); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .deal-url { font-size: 11px; color: var(--muted); font-family: var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; display: block; }
-  .price { font-family: var(--font); font-size: 13px; color: var(--accent); font-weight: 600; }
-  .score-badge { display: inline-flex; align-items: center; justify-content: center; background: var(--blue-dim); color: var(--blue); border-radius: 4px; font-family: var(--font); font-size: 12px; font-weight: 600; width: 36px; height: 24px; }
-  .category-badge { display: inline-block; background: var(--border); color: var(--muted); border-radius: 4px; font-size: 11px; font-family: var(--font); padding: 2px 7px; white-space: nowrap; }
+  .deal-img { width: 46px; height: 46px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); display: block; }
+  .deal-img-placeholder { width: 46px; height: 46px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .deal-title-text { font-size: 13px; font-weight: 500; color: var(--text); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 3px; }
+  .deal-url { font-size: 11px; color: var(--muted); font-family: var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; display: block; text-decoration: none; }
+  .deal-url:hover { color: var(--accent); }
+  .price { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--accent); }
+  .score-badge { display: inline-flex; align-items: center; justify-content: center; background: var(--blue-light); color: var(--blue); border-radius: 6px; font-family: var(--mono); font-size: 12px; font-weight: 500; width: 38px; height: 26px; border: 1px solid rgba(29,78,216,0.15); }
+  .category-badge { display: inline-block; background: var(--bg); color: var(--text-2); border: 1px solid var(--border); border-radius: 6px; font-size: 11px; font-weight: 500; padding: 3px 8px; white-space: nowrap; }
+  .source-badge { display: inline-block; font-size: 10px; font-family: var(--mono); color: var(--muted); background: var(--bg); border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px; margin-top: 2px; }
 
+  /* Toggles */
   .toggle-group { display: flex; flex-direction: column; gap: 5px; }
-  .toggle-btn { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 4px; font-size: 11px; font-family: var(--font); font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; white-space: nowrap; background: none; }
-  .toggle-active { background: var(--accent-dim); color: var(--accent); border-color: rgba(74,222,128,0.25); }
-  .toggle-inactive { background: var(--danger-dim); color: var(--danger); border-color: rgba(248,113,113,0.25); }
-  .toggle-featured-on { background: var(--warning-dim); color: var(--warning); border-color: rgba(251,191,36,0.25); }
-  .toggle-featured-off { background: transparent; color: var(--muted); border-color: var(--border); }
-  .toggle-student-on { background: var(--blue-dim); color: var(--blue); border-color: rgba(96,165,250,0.25); }
-  .toggle-student-off { background: transparent; color: var(--muted); border-color: var(--border); }
+  .toggle-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-family: var(--font); font-weight: 600; cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s; white-space: nowrap; background: none; }
+  .toggle-active { background: var(--accent-light); color: var(--accent); border-color: rgba(26,107,60,0.25); }
+  .toggle-inactive { background: var(--danger-light); color: var(--danger); border-color: rgba(192,57,43,0.2); }
+  .toggle-featured-on { background: var(--warning-light); color: var(--warning); border-color: rgba(180,83,9,0.2); }
+  .toggle-featured-off { background: var(--bg); color: var(--muted); border-color: var(--border); }
+  .toggle-student-on { background: var(--blue-light); color: var(--blue); border-color: rgba(29,78,216,0.2); }
+  .toggle-student-off { background: var(--bg); color: var(--muted); border-color: var(--border); }
 
+  /* Edit Row */
   .edit-row td { padding: 0; border-bottom: 2px solid var(--accent); }
-  .edit-form { background: rgba(74,222,128,0.03); padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; align-items: end; }
+  .edit-form { background: var(--accent-light); padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; align-items: end; }
   .field { display: flex; flex-direction: column; gap: 5px; }
-  label { font-size: 11px; font-family: var(--font); color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
-  input[type=text], input[type=number], input[type=url], select, textarea { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 7px 10px; font-size: 13px; font-family: var(--sans); outline: none; transition: border-color 0.15s; width: 100%; }
-  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
-  .edit-actions { display: flex; gap: 8px; align-items: center; }
+  .field label { font-size: 11px; font-weight: 600; color: var(--text-2); letter-spacing: 0.05em; text-transform: uppercase; }
+  input[type=text], input[type=number], input[type=url], input[type=password], select, textarea { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 8px 12px; font-size: 13px; font-family: var(--font); outline: none; transition: border-color 0.15s, box-shadow 0.15s; width: 100%; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,107,60,0.08); }
+  .edit-actions { display: flex; gap: 8px; align-items: center; padding-top: 4px; }
 
-  .empty-state { padding: 60px 24px; text-align: center; color: var(--muted); }
-  .empty-state .icon { font-size: 32px; margin-bottom: 12px; }
-  .loading-row td { padding: 40px; text-align: center; color: var(--muted); font-family: var(--font); font-size: 12px; }
+  /* Empty */
+  .empty-state { padding: 64px 24px; text-align: center; color: var(--muted); }
+  .empty-state .icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; font-weight: 500; }
+  .loading-row td { padding: 48px; text-align: center; color: var(--muted); font-size: 13px; }
 
-  .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px; max-width: 700px; }
-  .form-card h2 { font-size: 15px; font-weight: 600; margin-bottom: 20px; color: var(--text); }
+  /* Add Form */
+  .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; max-width: 680px; box-shadow: var(--shadow-sm); }
+  .form-card h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; letter-spacing: -0.2px; }
+  .form-card .sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .form-grid .full { grid-column: 1 / -1; }
-  .checkbox-group { display: flex; gap: 16px; flex-wrap: wrap; }
-  .checkbox-label { display: flex; align-items: center; gap: 7px; cursor: pointer; color: var(--text); font-size: 13px; }
-  input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
-  .form-actions { margin-top: 20px; display: flex; gap: 10px; }
-  .success-msg { color: var(--accent); font-size: 13px; font-family: var(--font); }
-  .error-msg { color: var(--danger); font-size: 13px; font-family: var(--font); }
+  .form-grid .full { grid-column: 1/-1; }
+  .checkbox-group { display: flex; gap: 20px; flex-wrap: wrap; }
+  .checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-2); font-size: 13px; font-weight: 500; }
+  input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+  .form-actions { margin-top: 22px; display: flex; gap: 10px; align-items: center; }
+  .success-msg { color: var(--accent); font-size: 13px; font-weight: 500; }
+  .error-msg { color: var(--danger); font-size: 13px; font-weight: 500; }
 
-  .config-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 28px; max-width: 560px; }
-  .config-card h2 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-  .config-card .subtitle { font-size: 12px; color: var(--muted); margin-bottom: 24px; font-family: var(--font); }
-  .config-fields { display: flex; flex-direction: column; gap: 14px; }
-  .config-actions { margin-top: 20px; display: flex; gap: 10px; align-items: center; }
-  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
-  .danger-zone h3 { font-size: 12px; color: var(--danger); font-family: var(--font); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px; }
+  /* Config */
+  .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 860px; }
+  .config-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); }
+  .config-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .config-card .sub { font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+  .config-fields { display: flex; flex-direction: column; gap: 12px; }
+  .config-actions { margin-top: 16px; display: flex; gap: 10px; align-items: center; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+  .danger-zone h4 { font-size: 11px; font-weight: 600; color: var(--danger); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
 
-  #login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); }
-  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 36px; width: 360px; }
-  .login-card .logo-big { font-family: var(--font); font-size: 16px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
-  .login-card .sub { font-size: 12px; color: var(--muted); margin-bottom: 28px; }
-  .login-card .field { margin-bottom: 14px; }
-  .login-error { color: var(--danger); font-size: 12px; font-family: var(--font); margin-top: 8px; min-height: 18px; }
-
+  /* Toasts */
   #toast-container { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 9999; }
-  .toast { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 10px 16px; font-size: 13px; font-family: var(--font); animation: slideIn 0.2s ease; min-width: 240px; }
-  .toast.success { border-left: 3px solid var(--accent); color: var(--accent); }
-  .toast.error { border-left: 3px solid var(--danger); color: var(--danger); }
-  @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .toast { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; font-weight: 500; animation: slideUp 0.2s cubic-bezier(0.34,1.56,0.64,1); min-width: 220px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 8px; }
+  .toast.success { border-left: 3px solid var(--accent); }
+  .toast.success::before { content: '✓'; color: var(--accent); font-weight: 700; }
+  .toast.error { border-left: 3px solid var(--danger); }
+  .toast.error::before { content: '✕'; color: var(--danger); font-weight: 700; }
+  @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .source-badge { font-size: 10px; font-family: var(--font); color: var(--muted); background: var(--border-light); padding: 1px 5px; border-radius: 3px; }
+  @media (max-width: 900px) { .stats-strip { grid-template-columns: repeat(2,1fr); } .config-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 
 <div id="login-screen">
-  <div class="login-card">
-    <div class="logo-big">eSchoolDeals</div>
-    <div class="sub">Admin — enter password to continue</div>
-    <div class="field">
-      <label>Password</label>
-      <input type="password" id="login-pw" placeholder="••••••••••" autocomplete="current-password">
+  <div class="login-wrap">
+    <div class="login-eyebrow">
+      <div class="login-logo-mark">eS</div>
+      <div class="login-brand">eSchoolDeals <span>/ Admin</span></div>
     </div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doLogin()">Sign in</button>
-    <div class="login-error" id="login-error"></div>
+    <div class="login-card">
+      <h1>Welcome back</h1>
+      <p class="sub">Sign in to manage your deals dashboard</p>
+      <div class="field">
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px;letter-spacing:0.01em">Password</label>
+        <input type="password" id="login-pw" placeholder="Enter your password" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px 16px;font-size:14px;margin-top:4px" onclick="doLogin()">Sign in →</button>
+      <div class="login-error" id="login-error"></div>
+    </div>
   </div>
 </div>
 
 <div id="app" style="display:none">
   <div class="header">
     <div class="header-left">
-      <div class="logo">escd<span>/admin</span></div>
-      <div class="status-dot" id="status-dot"></div>
-      <div class="status-label" id="status-label">not connected</div>
+      <div class="header-logo-mark">eS</div>
+      <div class="header-brand">eSchoolDeals</div>
+      <div class="header-divider"></div>
+      <div class="header-section">Admin</div>
     </div>
-    <div style="display:flex;align-items:center;gap:16px">
-      <span style="font-size:11px;color:var(--muted);font-family:var(--font)" id="deal-count-header"></span>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="status-pill" id="status-pill">
+        <div class="status-dot"></div>
+        <span id="status-label">Not connected</span>
+      </div>
       <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sign out</button>
     </div>
   </div>
 
   <div class="tabs">
-    <div class="tab active" data-tab="deals" onclick="switchTab('deals')">
-      All deals <span class="tab-count" id="tab-count">0</span>
-    </div>
-    <div class="tab" data-tab="add" onclick="switchTab('add')">+ Add deal</div>
-    <div class="tab" data-tab="config" onclick="switchTab('config')">Config</div>
+    <div class="tab active" data-tab="deals" onclick="switchTab('deals')">All Deals <span class="tab-count" id="tab-count">0</span></div>
+    <div class="tab" data-tab="add" onclick="switchTab('add')">+ Add Deal</div>
+    <div class="tab" data-tab="config" onclick="switchTab('config')">⚙ Config</div>
   </div>
 
   <div class="main">
+
     <div class="panel active" id="panel-deals">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Deal Management</div>
+          <div class="page-subtitle" id="deals-subtitle">Loading deals…</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadDeals()">↻ Refresh</button>
+      </div>
+
+      <div class="stats-strip">
+        <div class="stat-card"><div class="stat-label">Total Deals</div><div class="stat-value" id="stat-total">—</div></div>
+        <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value" id="stat-active">—</div></div>
+        <div class="stat-card"><div class="stat-label">Featured</div><div class="stat-value" id="stat-featured">—</div></div>
+        <div class="stat-card"><div class="stat-label">Student Picks</div><div class="stat-value" id="stat-student">—</div></div>
+      </div>
+
       <div class="toolbar">
-        <input type="text" class="search-input" placeholder="Search deals…" id="search-input" oninput="filterDeals()">
-        <select class="filter-select" id="filter-category" onchange="filterDeals()">
-          <option value="">All categories</option>
-        </select>
+        <div class="search-wrap">
+          <span class="search-icon">⌕</span>
+          <input type="text" class="search-input" placeholder="Search deals…" id="search-input" oninput="filterDeals()">
+        </div>
+        <select class="filter-select" id="filter-category" onchange="filterDeals()"><option value="">All categories</option></select>
         <select class="filter-select" id="filter-status" onchange="filterDeals()">
           <option value="">All statuses</option>
           <option value="active">Active only</option>
           <option value="inactive">Expired only</option>
         </select>
         <select class="filter-select" id="filter-featured" onchange="filterDeals()">
-          <option value="">All</option>
+          <option value="">All deals</option>
           <option value="featured">Featured only</option>
         </select>
-        <button class="btn btn-ghost btn-sm ml-auto" onclick="loadDeals()">↻ Refresh</button>
       </div>
-      <div class="deals-table-wrap">
-        <table id="deals-table">
+
+      <div class="table-card">
+        <table>
           <thead>
             <tr>
-              <th>Image</th><th>Title / URL</th><th>Price</th><th>Score</th><th>Category</th><th>Status</th><th>Flags</th><th>Actions</th>
+              <th style="width:56px">Image</th>
+              <th>Title & URL</th>
+              <th>Price</th>
+              <th>Score</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Flags</th>
+              <th style="width:130px">Actions</th>
             </tr>
           </thead>
           <tbody id="deals-tbody">
-            <tr class="loading-row"><td colspan="8"><span class="spinner"></span> loading…</td></tr>
+            <tr class="loading-row"><td colspan="8"><span class="spinner"></span>Loading deals…</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
     <div class="panel" id="panel-add">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Add New Deal</div>
+          <div class="page-subtitle">Manually add a deal to the database</div>
+        </div>
+      </div>
       <div class="form-card">
-        <h2>Add new deal</h2>
         <div class="form-grid">
           <div class="field full"><label>Title *</label><input type="text" id="add-title" placeholder="Product title"></div>
-          <div class="field"><label>Sale Price</label><input type="text" id="add-price" placeholder="e.g. 29.99"></div>
+          <div class="field"><label>Sale Price</label><input type="text" id="add-price" placeholder="29.99"></div>
           <div class="field"><label>Score (sort order)</label><input type="number" id="add-score" value="0"></div>
           <div class="field full"><label>Product URL *</label><input type="url" id="add-url" placeholder="https://…"></div>
           <div class="field full"><label>Image URL</label><input type="url" id="add-image" placeholder="https://…"></div>
@@ -253,7 +320,7 @@
           </div>
         </div>
         <div class="form-actions">
-          <button class="btn btn-primary" onclick="addDeal()">Add deal</button>
+          <button class="btn btn-primary" onclick="addDeal()">Add Deal</button>
           <button class="btn btn-ghost" onclick="clearAddForm()">Clear</button>
           <span id="add-msg"></span>
         </div>
@@ -261,34 +328,46 @@
     </div>
 
     <div class="panel" id="panel-config">
-      <div class="config-card">
-        <h2>Supabase Connection</h2>
-        <div class="subtitle">Settings saved in your browser's localStorage</div>
-        <div class="config-fields">
-          <div class="field"><label>Supabase Project URL</label><input type="url" id="cfg-url" value="https://syheoynoxbnoopjzlntx.supabase.co"></div>
-          <div class="field"><label>Service Role Key (secret)</label><input type="password" id="cfg-key" placeholder="eyJ…"></div>
+      <div class="page-header">
+        <div>
+          <div class="page-title">Configuration</div>
+          <div class="page-subtitle">Manage connection and admin settings</div>
         </div>
-        <div class="config-actions">
-          <button class="btn btn-primary" onclick="saveConfig()">Save &amp; connect</button>
-          <span id="cfg-msg"></span>
+      </div>
+      <div class="config-grid">
+        <div class="config-card">
+          <h3>Supabase Connection</h3>
+          <p class="sub">Credentials saved in your browser's localStorage</p>
+          <div class="config-fields">
+            <div class="field"><label>Project URL</label><input type="url" id="cfg-url" value="https://syheoynoxbnoopjzlntx.supabase.co"></div>
+            <div class="field"><label>Service Role Key</label><input type="password" id="cfg-key" placeholder="eyJ…"></div>
+          </div>
+          <div class="config-actions">
+            <button class="btn btn-primary" onclick="saveConfig()">Save & Connect</button>
+            <span id="cfg-msg" style="font-size:12px;color:var(--accent);font-weight:500"></span>
+          </div>
+          <hr class="divider">
+          <div class="danger-zone">
+            <h4>Danger Zone</h4>
+            <button class="btn btn-danger btn-sm" onclick="clearAllData()">Clear saved credentials</button>
+          </div>
         </div>
-        <hr class="divider">
-        <div class="field">
-          <label>Admin Password</label>
-          <input type="password" id="cfg-password" placeholder="New password">
-          <p style="font-size:11px;color:var(--muted);margin-top:5px;font-family:var(--font)">Default: eschooldeals2024</p>
-        </div>
-        <div style="margin-top:10px">
-          <button class="btn btn-ghost btn-sm" onclick="changePassword()">Update password</button>
-          <span id="pw-msg" style="font-size:12px;font-family:var(--font);color:var(--accent);margin-left:10px"></span>
-        </div>
-        <hr class="divider">
-        <div class="danger-zone">
-          <h3>Danger zone</h3>
-          <button class="btn btn-danger btn-sm" onclick="clearAllData()">Clear saved credentials</button>
+        <div class="config-card">
+          <h3>Admin Password</h3>
+          <p class="sub">Update the login password for this admin panel</p>
+          <div class="config-fields">
+            <div class="field"><label>New Password</label><input type="password" id="cfg-password" placeholder="Min. 6 characters"></div>
+          </div>
+          <div class="config-actions">
+            <button class="btn btn-ghost" onclick="changePassword()">Update Password</button>
+            <span id="pw-msg" style="font-size:12px;color:var(--accent);font-weight:500"></span>
+          </div>
+          <hr class="divider">
+          <p style="font-size:12px;color:var(--muted)">Current default: <span style="font-family:var(--mono);font-size:11px;background:var(--bg);padding:2px 6px;border-radius:4px;border:1px solid var(--border)">eschooldeals2024</span></p>
         </div>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -297,10 +376,7 @@
 <script>
 const DEFAULT_PW = 'eschooldeals2024';
 const SUPABASE_URL_DEFAULT = 'https://syheoynoxbnoopjzlntx.supabase.co';
-
-let sbClient = null;
-let allDeals = [];
-let editingId = null;
+let sbClient = null, allDeals = [], editingId = null;
 
 function doLogin() {
   const pw = document.getElementById('login-pw').value;
@@ -310,11 +386,11 @@ function doLogin() {
     document.getElementById('app').style.display = 'block';
     initApp();
   } else {
-    document.getElementById('login-error').textContent = 'Incorrect password';
+    document.getElementById('login-error').textContent = 'Incorrect password — try again';
     document.getElementById('login-pw').value = '';
+    document.getElementById('login-pw').focus();
   }
 }
-
 document.getElementById('login-pw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
 function doLogout() {
@@ -326,60 +402,49 @@ function doLogout() {
 
 function changePassword() {
   const np = document.getElementById('cfg-password').value.trim();
-  if (!np || np.length < 6) { document.getElementById('pw-msg').textContent = 'min 6 chars'; return; }
+  if (!np || np.length < 6) { document.getElementById('pw-msg').textContent = 'Min 6 characters'; return; }
   localStorage.setItem('escd_admin_pw', np);
   document.getElementById('cfg-password').value = '';
-  document.getElementById('pw-msg').textContent = 'saved';
-  setTimeout(() => document.getElementById('pw-msg').textContent = '', 2000);
+  document.getElementById('pw-msg').textContent = '✓ Password updated';
+  setTimeout(() => document.getElementById('pw-msg').textContent = '', 2500);
 }
 
 function initApp() {
   const url = localStorage.getItem('escd_sb_url') || SUPABASE_URL_DEFAULT;
   const key = localStorage.getItem('escd_sb_key');
   document.getElementById('cfg-url').value = url;
-  if (key) {
-    document.getElementById('cfg-key').value = key;
-    connectSupabase(url, key);
-  } else {
-    setStatus(false, 'no key — go to Config');
-    switchTab('config');
-  }
+  if (key) { document.getElementById('cfg-key').value = key; connectSupabase(url, key); }
+  else { setStatus(false, 'Not connected'); switchTab('config'); }
 }
 
 function connectSupabase(url, key) {
   try {
     sbClient = window.supabase.createClient(url, key);
-    setStatus(true, 'connected');
+    setStatus(true, 'Connected');
     loadDeals();
-  } catch(e) {
-    setStatus(false, 'connection failed');
-    toast('Connection failed: ' + e.message, 'error');
-  }
+  } catch(e) { setStatus(false, 'Connection failed'); toast('Connection failed: ' + e.message, 'error'); }
 }
 
 function setStatus(ok, msg) {
-  document.getElementById('status-dot').className = 'status-dot' + (ok ? ' connected' : '');
+  document.getElementById('status-pill').className = 'status-pill' + (ok ? ' connected' : '');
   document.getElementById('status-label').textContent = msg;
 }
 
 function saveConfig() {
   const url = document.getElementById('cfg-url').value.trim();
   const key = document.getElementById('cfg-key').value.trim();
-  if (!url || !key) { document.getElementById('cfg-msg').textContent = 'both fields required'; return; }
+  if (!url || !key) { document.getElementById('cfg-msg').textContent = 'Both fields required'; return; }
   localStorage.setItem('escd_sb_url', url);
   localStorage.setItem('escd_sb_key', key);
-  document.getElementById('cfg-msg').textContent = '';
   connectSupabase(url, key);
-  toast('Connected!', 'success');
+  toast('Connected to Supabase!', 'success');
   switchTab('deals');
 }
 
 function clearAllData() {
   if (!confirm('Remove saved credentials?')) return;
-  localStorage.removeItem('escd_sb_url');
-  localStorage.removeItem('escd_sb_key');
-  sbClient = null;
-  setStatus(false, 'disconnected');
+  localStorage.removeItem('escd_sb_url'); localStorage.removeItem('escd_sb_key');
+  sbClient = null; setStatus(false, 'Not connected');
   document.getElementById('cfg-key').value = '';
   toast('Credentials cleared', 'success');
 }
@@ -392,13 +457,20 @@ function switchTab(name) {
 
 async function loadDeals() {
   if (!sbClient) return;
-  const tbody = document.getElementById('deals-tbody');
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><span class="spinner"></span> loading…</td></tr>';
+  document.getElementById('deals-tbody').innerHTML = '<tr class="loading-row"><td colspan="8"><span class="spinner"></span>Loading deals…</td></tr>';
   const { data, error } = await sbClient.from('deals').select('*').order('score', { ascending: false });
   if (error) { toast('Load error: ' + error.message, 'error'); return; }
   allDeals = data || [];
-  updateCategoryFilter();
-  renderDeals(allDeals);
+  updateStats(); updateCategoryFilter(); renderDeals(allDeals);
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = allDeals.length;
+  document.getElementById('stat-active').textContent = allDeals.filter(d => d.active).length;
+  document.getElementById('stat-featured').textContent = allDeals.filter(d => d.featured).length;
+  document.getElementById('stat-student').textContent = allDeals.filter(d => d.student_pick).length;
+  document.getElementById('tab-count').textContent = allDeals.length;
+  document.getElementById('deals-subtitle').textContent = `${allDeals.length} total deals · ${allDeals.filter(d=>d.active).length} active`;
 }
 
 function updateCategoryFilter() {
@@ -414,36 +486,26 @@ function filterDeals() {
   const cat = document.getElementById('filter-category').value;
   const status = document.getElementById('filter-status').value;
   const feat = document.getElementById('filter-featured').value;
-  let filtered = allDeals.filter(d => {
+  renderDeals(allDeals.filter(d => {
     if (q && !d.title?.toLowerCase().includes(q)) return false;
     if (cat && d.category !== cat) return false;
     if (status === 'active' && !d.active) return false;
     if (status === 'inactive' && d.active) return false;
     if (feat === 'featured' && !d.featured) return false;
     return true;
-  });
-  renderDeals(filtered);
+  }));
 }
 
 function renderDeals(deals) {
   const tbody = document.getElementById('deals-tbody');
-  document.getElementById('tab-count').textContent = allDeals.length;
-  document.getElementById('deal-count-header').textContent = allDeals.length + ' total deals';
-  if (!deals.length) {
-    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="icon">📭</div><p>No deals found</p></div></td></tr>';
-    return;
-  }
+  if (!deals.length) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="icon">📭</div><p>No deals found</p></div></td></tr>`; return; }
   tbody.innerHTML = deals.map(d => dealRow(d)).join('');
 }
 
 function dealRow(d) {
-  const img = d.image_url
-    ? `<img class="deal-img" src="${esc(d.image_url)}" alt="" onerror="this.style.display='none';">`
-    : `<div class="deal-img-placeholder">🛍️</div>`;
-  const domain = (() => { try { return new URL(d.product_url || '').hostname.replace('www.',''); } catch { return d.product_url || '—'; } })();
+  const img = d.image_url ? `<img class="deal-img" src="${esc(d.image_url)}" alt="" onerror="this.style.display='none';">` : `<div class="deal-img-placeholder">🛍️</div>`;
+  const domain = (() => { try { return new URL(d.product_url||'').hostname.replace('www.',''); } catch { return d.product_url||'—'; } })();
   const price = d.sale_price ? `<span class="price">$${d.sale_price}</span>` : `<span style="color:var(--muted)">—</span>`;
-  const score = `<span class="score-badge">${d.score ?? 0}</span>`;
-  const cat = d.category ? `<span class="category-badge">${d.category}</span>` : '—';
   const activeBtn = d.active
     ? `<button class="toggle-btn toggle-active" onclick="toggleField(${d.id},'active',false)">● Active</button>`
     : `<button class="toggle-btn toggle-inactive" onclick="toggleField(${d.id},'active',true)">○ Expired</button>`;
@@ -457,14 +519,10 @@ function dealRow(d) {
   return `
     <tr id="row-${d.id}">
       <td>${img}</td>
-      <td><div class="deal-title-cell"><div>
-        <div class="deal-title-text" title="${esc(d.title||'')}">${esc(d.title||'—')}</div>
-        <a class="deal-url" href="${esc(d.product_url||'')}" target="_blank">${domain}</a>
-        ${source}
-      </div></div></td>
+      <td><div class="deal-title-text" title="${esc(d.title||'')}">${esc(d.title||'—')}</div><a class="deal-url" href="${esc(d.product_url||'')}" target="_blank">${domain}</a>${source}</td>
       <td>${price}</td>
-      <td>${score}</td>
-      <td>${cat}</td>
+      <td><span class="score-badge">${d.score??0}</span></td>
+      <td>${d.category?`<span class="category-badge">${d.category}</span>`:'—'}</td>
       <td>${activeBtn}</td>
       <td><div class="toggle-group">${featuredBtn}${studentBtn}</div></td>
       <td><div style="display:flex;gap:6px">
@@ -479,14 +537,10 @@ function dealRow(d) {
         <div class="field"><label>Score</label><input type="number" id="e-score-${d.id}" value="${d.score??0}"></div>
         <div class="field full"><label>Product URL</label><input type="url" id="e-url-${d.id}" value="${esc(d.product_url||'')}"></div>
         <div class="field full"><label>Image URL</label><input type="url" id="e-image-${d.id}" value="${esc(d.image_url||'')}"></div>
-        <div class="field"><label>Category</label>
-          <select id="e-cat-${d.id}">
-            ${['electronics','computers','phones','home','kitchen','fashion','sports','travel','toys','other'].map(c=>`<option value="${c}"${d.category===c?' selected':''}>${c}</option>`).join('')}
-          </select>
-        </div>
+        <div class="field"><label>Category</label><select id="e-cat-${d.id}">${['electronics','computers','phones','home','kitchen','fashion','sports','travel','toys','other'].map(c=>`<option value="${c}"${d.category===c?' selected':''}>${c}</option>`).join('')}</select></div>
         <div class="field"><label>Source Key</label><input type="text" id="e-source-${d.id}" value="${esc(d.source_key||'')}"></div>
         <div class="edit-actions" style="grid-column:1/-1">
-          <button class="btn btn-primary btn-sm" onclick="saveEdit(${d.id})">Save</button>
+          <button class="btn btn-primary btn-sm" onclick="saveEdit(${d.id})">Save changes</button>
           <button class="btn btn-ghost btn-sm" onclick="cancelEdit(${d.id})">Cancel</button>
         </div>
       </div></td>
@@ -518,9 +572,7 @@ async function saveEdit(id) {
   };
   const { error } = await sbClient.from('deals').update(updates).eq('id', id);
   if (error) { toast('Save failed: ' + error.message, 'error'); return; }
-  toast('Saved', 'success');
-  cancelEdit(id);
-  loadDeals();
+  toast('Changes saved', 'success'); cancelEdit(id); loadDeals();
 }
 
 async function toggleField(id, field, value) {
@@ -530,55 +582,52 @@ async function toggleField(id, field, value) {
   if (deal) deal[field] = value;
   const row = document.getElementById('row-'+id);
   if (row) row.outerHTML = dealRow(allDeals.find(d => d.id === id));
-  toast(field + ' → ' + value, 'success');
+  updateStats();
 }
 
 async function deleteDeal(id) {
   const deal = allDeals.find(d => d.id === id);
-  if (!confirm('Delete "' + (deal?.title || id) + '"?')) return;
+  if (!confirm('Delete "' + (deal?.title||id) + '"?')) return;
   const { error } = await sbClient.from('deals').delete().eq('id', id);
   if (error) { toast('Delete failed: ' + error.message, 'error'); return; }
-  toast('Deleted', 'success');
-  loadDeals();
+  toast('Deal deleted', 'success'); loadDeals();
 }
 
 async function addDeal() {
   const title = document.getElementById('add-title').value.trim();
   const url = document.getElementById('add-url').value.trim();
-  if (!title || !url) { document.getElementById('add-msg').innerHTML = '<span class="error-msg">title + URL required</span>'; return; }
+  if (!title || !url) { document.getElementById('add-msg').innerHTML = '<span class="error-msg">Title and URL are required</span>'; return; }
   const payload = {
-    title,
-    sale_price: document.getElementById('add-price').value.trim() || null,
-    product_url: url,
-    image_url: document.getElementById('add-image').value.trim() || null,
+    title, product_url: url,
+    sale_price: document.getElementById('add-price').value.trim()||null,
+    image_url: document.getElementById('add-image').value.trim()||null,
     score: parseInt(document.getElementById('add-score').value)||0,
     category: document.getElementById('add-category').value,
-    source_key: document.getElementById('add-source').value.trim() || 'manual',
+    source_key: document.getElementById('add-source').value.trim()||'manual',
     active: document.getElementById('add-active').checked,
     featured: document.getElementById('add-featured').checked,
     student_pick: document.getElementById('add-student').checked,
   };
   const { error } = await sbClient.from('deals').insert(payload);
   if (error) { document.getElementById('add-msg').innerHTML = '<span class="error-msg">'+error.message+'</span>'; return; }
-  document.getElementById('add-msg').innerHTML = '<span class="success-msg">✓ Deal added</span>';
-  clearAddForm();
-  toast('Deal added!', 'success');
+  document.getElementById('add-msg').innerHTML = '<span class="success-msg">✓ Deal added successfully</span>';
+  clearAddForm(); toast('Deal added!', 'success');
   setTimeout(() => { document.getElementById('add-msg').innerHTML = ''; }, 3000);
   loadDeals();
 }
 
 function clearAddForm() {
-  ['add-title','add-price','add-url','add-image','add-source'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('add-score').value = '0';
-  document.getElementById('add-active').checked = true;
-  document.getElementById('add-featured').checked = false;
-  document.getElementById('add-student').checked = false;
+  ['add-title','add-price','add-url','add-image','add-source'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('add-score').value='0';
+  document.getElementById('add-active').checked=true;
+  document.getElementById('add-featured').checked=false;
+  document.getElementById('add-student').checked=false;
 }
 
-function toast(msg, type = 'success') {
+function toast(msg, type='success') {
   const c = document.getElementById('toast-container');
   const t = document.createElement('div');
-  t.className = 'toast ' + type;
+  t.className = 'toast '+type;
   t.textContent = msg;
   c.appendChild(t);
   setTimeout(() => t.remove(), 3000);
