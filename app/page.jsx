@@ -35,6 +35,7 @@ export default function HomePage() {
 
   const safeDeals = Array.isArray(deals) ? deals : []
   const featuredDeals = safeDeals.filter(d => d.isFeatured)
+  const gridDeals = safeDeals.filter(d => !d.isFeatured)
 
   return (
     <>
@@ -50,11 +51,13 @@ export default function HomePage() {
           </div>
           {loading ? (
             <div className="deals-loading">Loading live deals...</div>
-          ) : safeDeals.length === 0 ? (
+          ) : gridDeals.length === 0 && featuredDeals.length === 0 ? (
             <div className="deals-loading">No deals found. Try refreshing.</div>
+          ) : gridDeals.length === 0 ? (
+            <div className="deals-loading">Check back soon for more deals.</div>
           ) : (
             <div className="deal-grid">
-              {safeDeals.map((deal) => (
+              {gridDeals.map((deal) => (
                 <DealCard key={deal.id ?? Math.random()} deal={deal} />
               ))}
             </div>
