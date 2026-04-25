@@ -1,6 +1,6 @@
 export default function PromoStrip({ deals = [] }) {
   if (!deals.length) return null
-  const featured = deals.slice(0, 4)
+  const featured = deals.slice(0, 6)
   return (
     <div className="promo-strip-wrap">
       <div className="section-header">
