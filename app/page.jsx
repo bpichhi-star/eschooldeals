@@ -9,15 +9,12 @@ import StudentHub from '@/components/StudentHub'
 
 function getToday() {
   return new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
+    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
   }).toUpperCase()
 }
 
 export default function HomePage() {
-  const [deals, setDeals] = useState([])
+  const [deals,   setDeals]   = useState([])
   const [loading, setLoading] = useState(true)
   const today = getToday()
 
@@ -25,7 +22,7 @@ export default function HomePage() {
     fetch('/api/deals')
       .then(r => r.json())
       .then(data => {
-        if (Array.isArray(data)) setDeals(data)
+        if (Array.isArray(data))        setDeals(data)
         else if (Array.isArray(data?.deals)) setDeals(data.deals)
         else setDeals([])
       })
@@ -35,11 +32,15 @@ export default function HomePage() {
 
   const safeDeals = Array.isArray(deals) ? deals : []
 
-  // Top 4 by score go to featured strip — fully dynamic, no hardcoding
-  const sorted = [...safeDeals].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-  const featuredDeals = sorted.slice(0, 4)
-  const featuredIds = new Set(featuredDeals.map(d => d.id))
-  const gridDeals = safeDeals.filter(d => !featuredIds.has(d.id))
+  // ESD Student Recommended strip — admin-controlled via is_featured flag
+  // Falls back to top-4 by score if no deals are manually flagged
+  const esdDeals = safeDeals.filter(d => d.isFeatured)
+  const featuredDeals = esdDeals.length > 0
+    ? esdDeals.slice(0, 4)
+    : [...safeDeals].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 4)
+
+  // Main grid — all active deals (ESD deals stay in grid too when placement is Both)
+  const gridDeals = safeDeals
 
   return (
     <>
@@ -55,10 +56,8 @@ export default function HomePage() {
           </div>
           {loading ? (
             <div className="deals-loading">Loading live deals...</div>
-          ) : gridDeals.length === 0 && featuredDeals.length === 0 ? (
-            <div className="deals-loading">No deals found. Try refreshing.</div>
           ) : gridDeals.length === 0 ? (
-            <div className="deals-loading">Check back soon for more deals.</div>
+            <div className="deals-loading">No deals yet — check back soon.</div>
           ) : (
             <div className="deal-grid">
               {gridDeals.map((deal) => (
