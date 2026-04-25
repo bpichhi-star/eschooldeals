@@ -1,9 +1,14 @@
 import { getSupabaseAdmin } from '@/lib/db/supabaseAdmin'
 export const runtime = 'nodejs'
 
-function auth(req) { return (req.headers.get('authorization')||'') === `Bearer ${process.env.CRON_SECRET}` }
+// Uses ADMIN_PASSWORD env var. If not set, admin is open (no auth required).
+function auth(req) {
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword) return true; // open access if no password configured
+  const h = req.headers.get('authorization') || '';
+  return h === `Bearer ${adminPassword}`;
+}
 
-// GET /api/admin/deals?status=pending|active|all
 export async function GET(req) {
   if (!auth(req)) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const status   = new URL(req.url).searchParams.get('status') || 'all'
@@ -15,7 +20,6 @@ export async function GET(req) {
   return Response.json(data)
 }
 
-// POST — manual deal (always active)
 export async function POST(req) {
   if (!auth(req)) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const body = await req.json()
@@ -27,7 +31,6 @@ export async function POST(req) {
   return Response.json(data)
 }
 
-// PATCH — approve (status:'active'), reject (status:'expired'), or edit
 export async function PATCH(req) {
   if (!auth(req)) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { id, ...updates } = await req.json()
@@ -38,7 +41,6 @@ export async function PATCH(req) {
   return Response.json(data)
 }
 
-// DELETE — hard delete
 export async function DELETE(req) {
   if (!auth(req)) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await req.json()
