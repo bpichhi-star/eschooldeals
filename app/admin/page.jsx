@@ -44,10 +44,11 @@ export default function AdminPage() {
   const [isOpen,   setIsOpen]   = useState(false)
 
   useEffect(() => {
-    fetch(API + '?status=pending', { headers: { Authorization: 'Bearer ' } })
+    const saved = localStorage.getItem('esd_admin_secret') || ''
+    fetch(API + '?status=pending', { headers: { Authorization: 'Bearer ' + saved } })
       .then(r => {
-        if (r.ok) { setIsOpen(true); setToken(''); setScreen('dashboard') }
-        else setScreen('login')
+        if (r.ok) { setToken(saved); setIsOpen(true); setScreen('dashboard') }
+        else { localStorage.removeItem('esd_admin_secret'); setScreen('login') }
       })
       .catch(() => setScreen('login'))
   }, [])
@@ -55,7 +56,10 @@ export default function AdminPage() {
   async function handleLogin(e) {
     e.preventDefault(); setError('')
     const res = await fetch(API + '?status=pending', { headers: { Authorization: 'Bearer ' + password } })
-    if (res.ok) { setToken(password); setScreen('dashboard') }
+    if (res.ok) {
+      localStorage.setItem('esd_admin_secret', password)
+      setToken(password); setScreen('dashboard')
+    }
     else setError('Incorrect password')
   }
 
