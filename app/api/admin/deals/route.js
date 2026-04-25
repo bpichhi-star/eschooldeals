@@ -2,7 +2,7 @@ import { getSupabaseAdmin } from '@/lib/db/supabaseAdmin'
 export const runtime = 'nodejs'
 
 const CJ_PUBLISHER_ID = process.env.CJ_PUBLISHER_ID || '7936037'
-const CJ_WOOT_ADVERTISER_ID = process.env.CJ_WOOT_ADVERTISER_ID || '5444163'
+const CJ_WOOT_ADVERTISER_ID = process.env.CJ_WOOT_ADVERTISER_ID || '4909784'
 
 // Wraps a woot.com URL with a CJ affiliate deep-link so commissions are tracked.
 // Non-Woot URLs are returned unchanged.
