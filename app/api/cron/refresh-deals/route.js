@@ -1,79 +1,76 @@
 // app/api/cron/refresh-deals/route.js
-import { fetchAmazonDeals }  from '@/lib/feeds/amazon';
-import { fetchWootDeals }    from '@/lib/feeds/woot';
-import { fetchWootRss }      from '@/lib/feeds/woot-rss';
+// Sources: Walmart + Woot via SerpApi — ALL land as 'pending' for manual review at /admin
+// Amazon: manual via SiteStripe — no automated fetch
+// Woot CJ: removed (approval stalled, no ETA)
+import { fetchWootSerp }     from '@/lib/feeds/woot-serp';
 import { fetchWalmartDeals } from '@/lib/feeds/walmart';
 import { upsertDeals }       from '@/lib/db/upsertDeals';
 import { getSupabaseAdmin }  from '@/lib/db/supabaseAdmin';
 
-export const runtime = 'nodejs';
+export const runtime     = 'nodejs';
 export const maxDuration = 60;
 
 export async function GET(req) {
-    const auth = req.headers.get('authorization');
-    if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-        return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  const auth = req.headers.get('authorization');
+  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
-    const supabaseAdmin = getSupabaseAdmin();
-    if (!supabaseAdmin) {
-        console.error('[cron] supabaseAdmin is null — check env vars');
-        return Response.json({ error: 'Supabase admin client not initialized' }, { status: 500 });
-    }
+  const supabaseAdmin = getSupabaseAdmin();
+  if (!supabaseAdmin) {
+    console.error('[cron] supabaseAdmin is null — check env vars');
+    return Response.json({ error: 'Supabase admin client not initialized' }, { status: 500 });
+  }
 
-    const startedAt = new Date();
-    console.log('[cron] refresh-deals started at', startedAt.toISOString());
+  const startedAt = new Date();
+  console.log('[cron] refresh-deals started at', startedAt.toISOString());
 
-    try {
-        const { error: expireError } = await supabaseAdmin
-            .from('deals')
-            .update({ status: 'expired' })
-            .lt('expires_at', new Date().toISOString())
-            .eq('status', 'active');
+  try {
+    // Expire stale active deals
+    const { error: expireError } = await supabaseAdmin
+      .from('deals')
+      .update({ status: 'expired' })
+      .lt('expires_at', new Date().toISOString())
+      .eq('status', 'active');
+    if (expireError) console.error('[cron] expire error:', expireError);
 
-        if (expireError) console.error('[cron] expire error:', expireError);
+    // Fetch all SerpApi sources in parallel
+    const [walmartRes, wootSerpRes] = await Promise.allSettled([
+      fetchWalmartDeals(),
+      fetchWootSerp(),
+    ]);
 
-        const [amazonDeals, wootDeals, wootRssDeals, walmartDeals] = await Promise.allSettled([
-            fetchAmazonDeals(),
-            fetchWootDeals(),
-            fetchWootRss(),
-            fetchWalmartDeals(),
-        ]);
+    const walmart  = walmartRes.status  === 'fulfilled' ? walmartRes.value  : [];
+    const wootSerp = wootSerpRes.status === 'fulfilled' ? wootSerpRes.value : [];
 
-        const amazon  = amazonDeals.status  === 'fulfilled' ? amazonDeals.value  : [];
-        const woot    = wootDeals.status    === 'fulfilled' ? wootDeals.value    : [];
-        const wootRss = wootRssDeals.status === 'fulfilled' ? wootRssDeals.value : [];
-        const walmart = walmartDeals.status === 'fulfilled' ? walmartDeals.value : [];
+    if (walmartRes.status  === 'rejected') console.error('[cron] walmart failed:',   walmartRes.reason);
+    if (wootSerpRes.status === 'rejected') console.error('[cron] woot-serp failed:', wootSerpRes.reason);
 
-        if (amazonDeals.status  === 'rejected') console.error('[cron] amazon failed:',   amazonDeals.reason);
-        if (wootDeals.status    === 'rejected') console.error('[cron] woot failed:',     wootDeals.reason);
-        if (wootRssDeals.status === 'rejected') console.error('[cron] woot-rss failed:', wootRssDeals.reason);
-        if (walmartDeals.status === 'rejected') console.error('[cron] walmart failed:',  walmartDeals.reason);
+    const allDeals = [...walmart, ...wootSerp];
+    console.log(`[cron] fetched — walmart: ${walmart.length}, woot-serp: ${wootSerp.length} — all pending your review`);
 
-        console.log(`[cron] fetched — amazon: ${amazon.length}, woot: ${woot.length}, woot-rss: ${wootRss.length}, walmart: ${walmart.length}`);
+    const { count } = allDeals.length
+      ? await upsertDeals(allDeals, { status: 'pending' })
+      : { count: 0 };
 
-        const allDeals = [...amazon, ...woot, ...wootRss, ...walmart];
-        const upserted = await upsertDeals(allDeals);
+    await supabaseAdmin.from('deal_runs').insert({
+      started_at:     startedAt.toISOString(),
+      finished_at:    new Date().toISOString(),
+      amazon_count:   0,
+      woot_count:     wootSerp.length,
+      walmart_count:  walmart.length,
+      total_upserted: count ?? 0,
+    });
 
-        await supabaseAdmin.from('deal_runs').insert({
-            started_at:     startedAt.toISOString(),
-            finished_at:    new Date().toISOString(),
-            amazon_count:   amazon.length,
-            woot_count:     woot.length + wootRss.length,
-            walmart_count:  walmart.length,
-            total_upserted: upserted,
-        });
-
-        return Response.json({
-            success:    true,
-            amazon:     amazon.length,
-            woot:       woot.length,
-            'woot-rss': wootRss.length,
-            walmart:    walmart.length,
-            upserted,
-        });
-    } catch (err) {
-        console.error('[cron] fatal error:', err);
-        return Response.json({ error: err.message }, { status: 500 });
-    }
+    return Response.json({
+      success:          true,
+      walmart:          walmart.length,
+      'woot-serp':      wootSerp.length,
+      pending_upserted: count ?? 0,
+      note:             'All deals pending — approve at /admin',
+    });
+  } catch (err) {
+    console.error('[cron] fatal error:', err);
+    return Response.json({ error: err.message }, { status: 500 });
+  }
 }
