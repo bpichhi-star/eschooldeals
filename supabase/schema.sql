@@ -9,9 +9,13 @@ create table if not exists sources (
 
 create table if not exists deal_runs (
   id bigserial primary key,
-  trigger_type text not null,
+  trigger_type text not null default 'cron',
   status text not null default 'running',
   notes text,
+  amazon_count integer not null default 0,
+  woot_count integer not null default 0,
+  walmart_count integer not null default 0,
+  total_upserted integer not null default 0,
   started_at timestamptz not null default now(),
   finished_at timestamptz
 );
@@ -49,25 +53,25 @@ create table if not exists deals (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists deals_status_idx on deals(status);
-create index if not exists deals_category_idx on deals(category);
-create index if not exists deals_score_idx on deals(score desc);
+create index if not exists deals_status_idx     on deals(status);
+create index if not exists deals_category_idx   on deals(category);
+create index if not exists deals_score_idx      on deals(score desc);
 create index if not exists deals_source_key_idx on deals(source_key);
 create index if not exists deals_fetched_at_idx on deals(fetched_at desc);
 
 create unique index if not exists deals_unique_source_product_idx
-on deals(source_key, product_url);
+  on deals(source_key, product_url);
 
 insert into sources (key, merchant, source_type)
 values
-  ('amazon', 'AMAZON', 'feed'),
+  ('amazon',  'AMAZON',  'feed'),
   ('walmart', 'WALMART', 'feed'),
-  ('target', 'TARGET', 'feed'),
-  ('bestbuy', 'BEST BUY', 'feed'),
-  ('woot', 'WOOT', 'feed'),
-  ('ebay', 'EBAY', 'feed'),
+  ('target',  'TARGET',  'feed'),
+  ('bestbuy', 'BEST BUY','feed'),
+  ('woot',    'WOOT',    'feed'),
+  ('ebay',    'EBAY',    'feed'),
   ('wayfair', 'WAYFAIR', 'feed'),
-  ('rei', 'REI', 'feed'),
-  ('macys', 'MACY''S', 'feed'),
-  ('adidas', 'ADIDAS', 'feed')
+  ('rei',     'REI',     'feed'),
+  ('macys',   'MACY''S', 'feed'),
+  ('adidas',  'ADIDAS',  'feed')
 on conflict (key) do nothing;
