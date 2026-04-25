@@ -1,620 +1,70 @@
 'use client'
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useState, useEffect } from 'react'
+import NavBar from '@/components/NavBar'
+import CategoryNav from '@/components/CategoryNav'
+import PromoStrip from '@/components/PromoStrip'
+import DealCard from '@/components/DealCard'
+import AdSidebar from '@/components/AdSidebar'
+import StudentHub from '@/components/StudentHub'
 
-const API = '/api/admin/deals'
-const INGEST_API = '/api/ingest/run'
+function getToday() {
+  return new Date().toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+  }).toUpperCase()
+}
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-// is_featured: false → "Main Feed" (grid only)
-// is_featured: true  → "ESD Recommended" (ESD strip + grid)
-// The ESD strip on the homepage shows up to 6 featured deals.
-// All active deals always appear in the main grid regardless of placement.
-const ESD_CAP = 6
-
-const PLACEMENTS = [
-  { value: 'feed', label: '📋 Main Feed',       desc: 'Grid only',         is_featured: false },
-  { value: 'esd',  label: '⭐ ESD Recommended',  desc: 'ESD strip + grid',  is_featured: true  },
-]
-
-const STATUS_OPTS = [
-  { value: 'pending', label: 'Pending', color: '#f59e0b', bg: '#fef3c7' },
-  { value: 'active',  label: 'Active',  color: '#10b981', bg: '#d1fae5' },
-  { value: 'expired', label: 'Expired', color: '#6b7280', bg: '#f3f4f6' },
-]
-
-const CATEGORIES = [
-  'All', 'Electronics', 'Computers', 'Phones', 'Home', 'Kitchen',
-  'Fashion', 'Sports', 'Travel', 'Toys', 'Software', 'Books',
-]
-
-const SORT_OPTS = [
-  { value: 'score',     label: 'Score (high → low)' },
-  { value: 'fetched',   label: 'Date (newest first)' },
-  { value: 'price-asc', label: 'Price (low → high)' },
-  { value: 'price-desc',label: 'Price (high → low)' },
-  { value: 'discount',  label: 'Discount % (high → low)' },
-]
-
-// ─── Auth wrapper ─────────────────────────────────────────────────────────────
-export default function AdminPage() {
-  const [screen,   setScreen]   = useState('checking')
-  const [password, setPassword] = useState('')
-  const [token,    setToken]    = useState('')
-  const [error,    setError]    = useState('')
-  const [isOpen,   setIsOpen]   = useState(false)
+export default function HomePage() {
+  const [deals,   setDeals]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const today = getToday()
 
   useEffect(() => {
-    fetch(API + '?status=pending', { headers: { Authorization: 'Bearer ' } })
-      .then(r => {
-        if (r.ok) { setIsOpen(true); setToken(''); setScreen('dashboard') }
-        else setScreen('login')
+    fetch('/api/deals')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data))             setDeals(data)
+        else if (Array.isArray(data?.deals)) setDeals(data.deals)
+        else setDeals([])
       })
-      .catch(() => setScreen('login'))
+      .catch(() => setDeals([]))
+      .finally(() => setLoading(false))
   }, [])
 
-  async function handleLogin(e) {
-    e.preventDefault(); setError('')
-    const res = await fetch(API + '?status=pending', { headers: { Authorization: 'Bearer ' + password } })
-    if (res.ok) { setToken(password); setScreen('dashboard') }
-    else setError('Incorrect password')
-  }
+  const safeDeals = Array.isArray(deals) ? deals : []
 
-  if (screen === 'checking') return <Wrap><p style={S.muted}>Loading…</p></Wrap>
-  if (screen === 'login') return (
-    <Wrap>
-      <h2 style={{ fontSize:18, fontWeight:700, marginBottom:6 }}>Admin Login</h2>
-      <p style={S.muted}>Enter your ADMIN_PASSWORD to continue.</p>
-      <form onSubmit={handleLogin} style={{ display:'flex', flexDirection:'column', gap:10, maxWidth:340, marginTop:16 }}>
-        <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} autoFocus
-          style={{ padding:'9px 12px', border:'1px solid #d1d5db', borderRadius:7, fontSize:14 }} />
-        {error && <p style={{ color:'#dc2626', fontSize:13, margin:0 }}>{error}</p>}
-        <button type="submit" style={S.primaryBtn}>Log in</button>
-      </form>
-    </Wrap>
-  )
-  return <Dashboard token={token} isOpen={isOpen} />
-}
+  const esdDeals = safeDeals.filter(d => d.isFeatured)
+  const featuredDeals = esdDeals.length > 0
+    ? esdDeals.slice(0, 6)
+    : [...safeDeals].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 6)
 
-// ─── Dashboard ────────────────────────────────────────────────────────────────
-function Dashboard({ token, isOpen }) {
-  const [deals,    setDeals]    = useState([])
-  const [loading,  setLoading]  = useState(false)
-  const [filter,   setFilter]   = useState('pending')
-  const [category, setCategory] = useState('All')
-  const [sort,     setSort]     = useState('score')
-  const [search,   setSearch]   = useState('')
-  const [selected, setSelected] = useState(new Set())
-  const [msg,      setMsg]      = useState('')
-  const [ingesting,setIngesting]= useState(false)
-
-  const hdrs = useMemo(() => ({ 'Content-Type':'application/json', Authorization:'Bearer '+token }), [token])
-
-  // ── Load — fetches ALL deals so stats are accurate, then filters client-side
-  const load = useCallback(async () => {
-    setLoading(true); setMsg('')
-    try {
-      const res  = await fetch(API + '?status=all', { headers: hdrs })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      setDeals(Array.isArray(data) ? data : [])
-      setSelected(new Set()) // clear selection on reload
-    } catch (e) { setMsg('Error: '+e.message) }
-    finally { setLoading(false) }
-  }, [hdrs])
-
-  useEffect(() => { load() }, [load])
-
-  // ── Stats (computed from full deal list, not filtered)
-  const stats = useMemo(() => ({
-    total:   deals.length,
-    pending: deals.filter(d => d.status === 'pending').length,
-    active:  deals.filter(d => d.status === 'active').length,
-    esd:     deals.filter(d => d.status === 'active' && d.is_featured).length,
-    expired: deals.filter(d => d.status === 'expired').length,
-  }), [deals])
-
-  const overCap = stats.esd > ESD_CAP
-
-  // ── Filtered + sorted view
-  const shown = useMemo(() => {
-    let list = deals
-    if (filter   !== 'all')  list = list.filter(d => d.status === filter)
-    if (category !== 'All')  list = list.filter(d => (d.category || '').toLowerCase() === category.toLowerCase())
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
-      list = list.filter(d =>
-        (d.title    || '').toLowerCase().includes(q) ||
-        (d.merchant || '').toLowerCase().includes(q)
-      )
-    }
-    const sorted = [...list]
-    switch (sort) {
-      case 'fetched':    sorted.sort((a,b) => new Date(b.fetched_at||0) - new Date(a.fetched_at||0)); break
-      case 'price-asc':  sorted.sort((a,b) => (a.sale_price ?? Infinity) - (b.sale_price ?? Infinity)); break
-      case 'price-desc': sorted.sort((a,b) => (b.sale_price ?? -1) - (a.sale_price ?? -1)); break
-      case 'discount':   sorted.sort((a,b) => (b.discount_pct ?? 0) - (a.discount_pct ?? 0)); break
-      default:           sorted.sort((a,b) => (b.score ?? 0) - (a.score ?? 0))
-    }
-    return sorted
-  }, [deals, filter, category, sort, search])
-
-  // ── Per-deal update
-  async function update(id, updates) {
-    setMsg('')
-    const res  = await fetch(API, { method:'PATCH', headers: hdrs, body: JSON.stringify({ id, ...updates }) })
-    const data = await res.json()
-    if (!res.ok) { setMsg('Error: '+data.error); return }
-    setDeals(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d))
-    flash('Saved')
-  }
-
-  // ── Per-deal delete
-  async function remove(id) {
-    if (!confirm('Delete this deal permanently?')) return
-    const res = await fetch(API, { method:'DELETE', headers: hdrs, body: JSON.stringify({ id }) })
-    if (!res.ok) { const d = await res.json(); setMsg('Error: '+d.error); return }
-    setDeals(prev => prev.filter(d => d.id !== id))
-    setSelected(prev => { const n = new Set(prev); n.delete(id); return n })
-  }
-
-  // ── Bulk actions
-  async function bulk(action) {
-    const ids = [...selected]
-    if (!ids.length) return
-    const verb = action === 'delete'   ? 'Delete' :
-                 action === 'activate' ? 'Activate' :
-                 action === 'pending'  ? 'Move to pending' :
-                 action === 'expire'   ? 'Expire' : action
-    if (!confirm(`${verb} ${ids.length} deal${ids.length>1?'s':''}?`)) return
-
-    setMsg(`${verb}ing ${ids.length}…`)
-    let ok = 0, fail = 0
-    for (const id of ids) {
-      try {
-        if (action === 'delete') {
-          const r = await fetch(API, { method:'DELETE', headers: hdrs, body: JSON.stringify({ id }) })
-          r.ok ? ok++ : fail++
-        } else {
-          const status = action === 'activate' ? 'active' : action === 'pending' ? 'pending' : 'expired'
-          const r = await fetch(API, { method:'PATCH', headers: hdrs, body: JSON.stringify({ id, status }) })
-          r.ok ? ok++ : fail++
-        }
-      } catch { fail++ }
-    }
-    setMsg(`${verb}d ${ok}${fail ? ` · ${fail} failed` : ''}`)
-    setSelected(new Set())
-    await load()
-    setTimeout(() => setMsg(''), 4000)
-  }
-
-  function toggleSelect(id) {
-    setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
-  }
-  function selectAllShown() {
-    const allIds = shown.map(d => d.id)
-    const allSelected = allIds.every(id => selected.has(id))
-    setSelected(allSelected ? new Set() : new Set(allIds))
-  }
-
-  function flash(text) { setMsg(text); setTimeout(() => setMsg(''), 2000) }
-
-  // ── Manual ingest trigger
-  async function runIngest() {
-    if (!confirm('Run ingest now? This will fetch fresh deals from SerpApi (counts against your monthly quota).')) return
-    setIngesting(true); setMsg('Running ingest — this may take 30 seconds…')
-    try {
-      const res  = await fetch(INGEST_API, { method:'POST', headers: hdrs })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Ingest failed')
-      setMsg(`Ingest done. New: ${data.upserted ?? data.count ?? '?'}`)
-      await load()
-    } catch (e) { setMsg('Ingest error: ' + e.message) }
-    finally {
-      setIngesting(false)
-      setTimeout(() => setMsg(''), 6000)
-    }
-  }
+  const gridDeals = safeDeals
 
   return (
-    <Wrap>
-      {isOpen && (
-        <div style={{ background:'#fef9c3', border:'1px solid #fde047', borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:13 }}>
-          <strong>No password set.</strong> Add <code>ADMIN_PASSWORD</code> in Vercel env vars to secure this page, then redeploy.
-        </div>
-      )}
-
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:12, marginBottom:6 }}>
-        <div>
-          <h1 style={{ fontSize:20, fontWeight:700, margin:'0 0 4px' }}>eSchoolDeals — Deal Manager</h1>
-          <p style={{ color:'#6b7280', fontSize:13, margin:0 }}>Review SerpApi deals, add deals manually, and control placement.</p>
-        </div>
-        <button onClick={runIngest} disabled={ingesting}
-          style={{ ...S.secondaryBtn, opacity: ingesting ? 0.6 : 1, cursor: ingesting ? 'wait' : 'pointer' }}>
-          {ingesting ? '⏳ Running…' : '🔄 Run Ingest Now'}
-        </button>
-      </div>
-
-      {/* ── Stats cards ─────────────────────────────────────────────────────── */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:10, margin:'16px 0' }}>
-        <StatCard label="Pending" value={stats.pending} color="#f59e0b" />
-        <StatCard label="Active" value={stats.active} color="#10b981" />
-        <StatCard label="ESD Recommended" value={`${stats.esd} / ${ESD_CAP}`} color={overCap ? '#dc2626' : '#6366f1'} />
-        <StatCard label="Total Deals" value={stats.total} color="#374151" />
-      </div>
-
-      {overCap && (
-        <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:13, color:'#991b1b' }}>
-          <strong>⚠️ Over ESD cap.</strong> The strip shows max {ESD_CAP} deals — you have {stats.esd} marked.
-          The 6 with the highest score will display; the rest are hidden until you un-flag them.
-        </div>
-      )}
-
-      {/* ── Add Deal form ───────────────────────────────────────────────────── */}
-      <AddDealForm token={token} onAdded={load} />
-
-      {/* ── Filters / search / sort ─────────────────────────────────────────── */}
-      <div style={{ display:'grid', gap:8, marginBottom:14 }}>
-        <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap' }}>
-          {['pending','active','expired','all'].map(f => (
-            <button key={f} onClick={() => setFilter(f)} style={{
-              padding:'5px 14px', borderRadius:20, cursor:'pointer', fontSize:13,
-              border: filter===f ? 'none' : '1px solid #d1d5db',
-              background: filter===f ? '#111' : '#fff', color: filter===f ? '#fff' : '#374151',
-            }}>
-              {f === 'all' ? 'All' : f.charAt(0).toUpperCase()+f.slice(1)}
-              {' '}({f === 'all' ? stats.total : f === 'active' ? stats.active : f === 'pending' ? stats.pending : stats.expired})
-            </button>
-          ))}
-          <button onClick={load} style={S.refreshBtn}>↻ Refresh</button>
-          {msg && <span style={{ fontSize:13, color: msg.startsWith('Error') || msg.startsWith('Ingest error') ? '#dc2626' : '#16a34a', marginLeft:'auto' }}>{msg}</span>}
-        </div>
-
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
-          <input
-            type="text" placeholder="Search title or merchant…"
-            value={search} onChange={e => setSearch(e.target.value)}
-            style={{ flex:'1 1 220px', padding:'7px 12px', border:'1px solid #d1d5db', borderRadius:7, fontSize:13 }}
-          />
-          <select value={category} onChange={e => setCategory(e.target.value)} style={S.select}>
-            {CATEGORIES.map(c => <option key={c} value={c}>{c === 'All' ? 'All categories' : c}</option>)}
-          </select>
-          <select value={sort} onChange={e => setSort(e.target.value)} style={S.select}>
-            {SORT_OPTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
-        </div>
-
-        {/* Bulk action bar */}
-        {shown.length > 0 && (
-          <div style={{ display:'flex', gap:8, alignItems:'center', padding:'8px 12px', background:'#f9fafb', border:'1px solid #e5e7eb', borderRadius:7, fontSize:13, flexWrap:'wrap' }}>
-            <label style={{ display:'flex', alignItems:'center', gap:6, cursor:'pointer' }}>
-              <input type="checkbox"
-                checked={shown.length > 0 && shown.every(d => selected.has(d.id))}
-                onChange={selectAllShown} />
-              Select all ({shown.length})
-            </label>
-            {selected.size > 0 && (
-              <>
-                <span style={{ color:'#6b7280' }}>{selected.size} selected</span>
-                <span style={{ color:'#d1d5db' }}>|</span>
-                <button onClick={() => bulk('activate')} style={S.bulkBtn('#10b981')}>Activate</button>
-                <button onClick={() => bulk('pending')}  style={S.bulkBtn('#f59e0b')}>Move to Pending</button>
-                <button onClick={() => bulk('expire')}   style={S.bulkBtn('#6b7280')}>Expire</button>
-                <button onClick={() => bulk('delete')}   style={S.bulkBtn('#dc2626')}>Delete</button>
-                <button onClick={() => setSelected(new Set())} style={{ ...S.bulkBtn('#6b7280'), background:'transparent', color:'#6b7280' }}>Clear</button>
-              </>
-            )}
+    <>
+      <NavBar />
+      <CategoryNav />
+      <div className="page-wrap">
+        <main>
+          <StudentHub />
+          <PromoStrip deals={featuredDeals} />
+          <div className="section-header">
+            <h1 className="section-title">Today's Deals</h1>
+            <span className="section-date">{today}</span>
           </div>
-        )}
-      </div>
-
-      {loading && <p style={S.muted}>Loading…</p>}
-      {!loading && shown.length === 0 && (
-        <p style={S.muted}>
-          {filter === 'pending' ? 'No pending deals — trigger ingest to pull fresh ones.' : 'No deals match these filters.'}
-        </p>
-      )}
-
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(330px, 1fr))', gap:12 }}>
-        {shown.map(d => (
-          <Card key={d.id} deal={d}
-            selected={selected.has(d.id)}
-            onSelect={() => toggleSelect(d.id)}
-            onUpdate={update}
-            onDelete={remove}
-          />
-        ))}
-      </div>
-    </Wrap>
-  )
-}
-
-// ─── Stat card ────────────────────────────────────────────────────────────────
-function StatCard({ label, value, color }) {
-  return (
-    <div style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:8, padding:'12px 14px' }}>
-      <div style={{ fontSize:11, color:'#6b7280', fontWeight:600, textTransform:'uppercase', letterSpacing:0.3, marginBottom:4 }}>{label}</div>
-      <div style={{ fontSize:22, fontWeight:700, color }}>{value}</div>
-    </div>
-  )
-}
-
-// ─── Deal card ────────────────────────────────────────────────────────────────
-function Card({ deal: d, selected, onSelect, onUpdate, onDelete }) {
-  const [editingScore, setEditingScore] = useState(false)
-  const [scoreInput,   setScoreInput]   = useState(d.score ?? 0)
-
-  const isPending = d.status === 'pending'
-  const isActive  = d.status === 'active'
-  const isESD     = Boolean(d.is_featured)
-  const placement = isESD ? 'esd' : 'feed'
-  const border    = selected ? '#6366f1' : isPending ? '#f59e0b' : isActive ? '#10b981' : '#e5e7eb'
-  const statusOpt = STATUS_OPTS.find(s => s.value === d.status) || STATUS_OPTS[0]
-
-  function commitScore() {
-    setEditingScore(false)
-    const newScore = parseFloat(scoreInput)
-    if (!Number.isFinite(newScore) || newScore === d.score) return
-    onUpdate(d.id, { score: newScore })
-  }
-
-  return (
-    <div style={{
-      border: `${selected ? '2px' : '1px'} solid ${border}`,
-      borderRadius:10, padding:14, background:'#fff',
-      boxShadow:'0 1px 3px rgba(0,0,0,.05)',
-      display:'flex', flexDirection:'column', gap:10,
-    }}>
-      {/* Header: select + status + source */}
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
-        <label style={{ display:'flex', alignItems:'center', gap:6, cursor:'pointer' }}>
-          <input type="checkbox" checked={selected} onChange={onSelect} />
-          <span style={{ fontSize:11, fontWeight:600, padding:'2px 8px', borderRadius:20, background:statusOpt.bg, color:statusOpt.color }}>
-            {statusOpt.label.toUpperCase()} · {d.merchant || '—'}
-          </span>
-        </label>
-        <span style={{ fontSize:10, color:'#9ca3af' }}>{d.source_key || '—'}</span>
-      </div>
-
-      {/* Image preview + title */}
-      <div style={{ display:'flex', gap:12 }}>
-        {d.image_url ? (
-          <img src={d.image_url} alt="" loading="lazy"
-            style={{ width:88, height:88, objectFit:'contain', borderRadius:6, border:'1px solid #f3f4f6', flexShrink:0, background:'#fafafa' }}
-            onError={(e) => { e.currentTarget.style.display = 'none' }} />
-        ) : (
-          <div style={{ width:88, height:88, borderRadius:6, border:'1px dashed #e5e7eb', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'#9ca3af', flexShrink:0 }}>no image</div>
-        )}
-        <p style={{ fontSize:13, fontWeight:500, margin:0, lineHeight:1.4, flex:1, wordBreak:'break-word' }}>{d.title}</p>
-      </div>
-
-      {/* Price + discount + score */}
-      <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
-        <span style={{ fontSize:18, fontWeight:700 }}>${Number(d.sale_price ?? 0).toFixed(2)}</span>
-        {d.original_price != null && Number(d.original_price) > 0 && (
-          <span style={{ fontSize:12, color:'#9ca3af', textDecoration:'line-through' }}>${Number(d.original_price).toFixed(2)}</span>
-        )}
-        {d.discount_pct > 0 && (
-          <span style={{ fontSize:11, fontWeight:600, background:'#fee2e2', color:'#b91c1c', padding:'2px 8px', borderRadius:10 }}>
-            -{d.discount_pct}%
-          </span>
-        )}
-        <span style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:4, fontSize:11, color:'#6b7280' }}>
-          score:
-          {editingScore ? (
-            <input type="number" step="1" autoFocus
-              value={scoreInput}
-              onChange={e => setScoreInput(e.target.value)}
-              onBlur={commitScore}
-              onKeyDown={e => { if (e.key === 'Enter') commitScore(); if (e.key === 'Escape') { setEditingScore(false); setScoreInput(d.score ?? 0) } }}
-              style={{ width:56, padding:'1px 5px', border:'1px solid #d1d5db', borderRadius:4, fontSize:11 }}
-            />
+          {loading ? (
+            <div className="deals-loading">Loading live deals...</div>
+          ) : gridDeals.length === 0 ? (
+            <div className="deals-loading">No deals yet — check back soon.</div>
           ) : (
-            <button onClick={() => { setScoreInput(d.score ?? 0); setEditingScore(true) }}
-              style={{ background:'transparent', border:'1px dashed transparent', padding:'1px 4px', borderRadius:4, fontSize:11, color:'#374151', fontWeight:600, cursor:'pointer' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = '#d1d5db'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
-              {Number(d.score ?? 0).toFixed(0)} ✎
-            </button>
+            <div className="deal-grid">
+              {gridDeals.map((deal) => (
+                <DealCard key={deal.id ?? Math.random()} deal={deal} />
+              ))}
+            </div>
           )}
-        </span>
+        </main>
+        <AdSidebar />
       </div>
-
-      {/* Link */}
-      <a href={d.product_url} target="_blank" rel="noopener noreferrer"
-        style={{ fontSize:11, color:'#6366f1', textDecoration:'none', wordBreak:'break-all' }}>
-        {(d.product_url || '').substring(0, 80)}{(d.product_url || '').length > 80 ? '…' : ''}
-      </a>
-
-      {/* Status segmented control */}
-      <div style={{ background:'#f9fafb', borderRadius:7, padding:'8px 10px' }}>
-        <p style={S.fieldLabel}>STATUS</p>
-        <div style={{ display:'flex', gap:6 }}>
-          {STATUS_OPTS.map(opt => (
-            <button key={opt.value} onClick={() => d.status !== opt.value && onUpdate(d.id, { status: opt.value })}
-              style={{
-                flex:1, padding:'5px 8px', fontSize:11, fontWeight:600,
-                border: d.status === opt.value ? `2px solid ${opt.color}` : '1px solid #e5e7eb',
-                borderRadius:6, cursor:'pointer',
-                background: d.status === opt.value ? opt.bg : '#fff',
-                color:      d.status === opt.value ? opt.color : '#6b7280',
-              }}>
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Placement selector — only for active */}
-      {isActive && (
-        <div style={{ background:'#f9fafb', borderRadius:7, padding:'8px 10px' }}>
-          <p style={S.fieldLabel}>PLACEMENT</p>
-          <div style={{ display:'flex', gap:6 }}>
-            {PLACEMENTS.map(p => (
-              <label key={p.value} style={{
-                display:'flex', alignItems:'center', gap:4, cursor:'pointer', padding:'4px 9px',
-                border: placement === p.value ? '2px solid #111' : '1px solid #e5e7eb',
-                borderRadius:6, fontSize:12, fontWeight: placement === p.value ? 600 : 400,
-                background: placement === p.value ? '#fff' : 'transparent', flex:1, justifyContent:'center',
-              }}>
-                <input type="radio" name={'placement-'+d.id} value={p.value} checked={placement === p.value}
-                  onChange={() => onUpdate(d.id, { is_featured: p.is_featured })} style={{ margin:0 }} />
-                {p.label}
-              </label>
-            ))}
-          </div>
-          {isESD && <p style={{ fontSize:10, color:'#6b7280', margin:'5px 0 0' }}>⭐ Showing in ESD Student Recommended strip</p>}
-        </div>
-      )}
-
-      {/* Delete */}
-      <div style={{ display:'flex' }}>
-        <button onClick={() => onDelete(d.id)} style={{
-          marginLeft:'auto', padding:'5px 10px', background:'#fff', color:'#dc2626',
-          border:'1px solid #fecaca', borderRadius:6, cursor:'pointer', fontSize:12,
-        }}>🗑 Delete</button>
-      </div>
-    </div>
+    </>
   )
-}
-
-// ─── Add Deal form ────────────────────────────────────────────────────────────
-function AddDealForm({ token, onAdded }) {
-  const [open, setOpen] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [msg, setMsg] = useState('')
-  const [form, setForm] = useState({
-    title: '', product_url: '', sale_price: '', original_price: '',
-    image_url: '', merchant: '', category: 'Electronics', placement: 'feed',
-  })
-
-  function set(k, v) { setForm(f => ({ ...f, [k]: v })) }
-
-  async function submit(e) {
-    e.preventDefault()
-    if (!form.title || !form.product_url || !form.sale_price) {
-      setMsg('Title, URL and price are required'); return
-    }
-    setSaving(true); setMsg('')
-    const p = PLACEMENTS.find(x => x.value === form.placement)
-    const body = {
-      title:               form.title.trim(),
-      product_url:         form.product_url.trim(),
-      sale_price:          parseFloat(form.sale_price),
-      original_price:      form.original_price ? parseFloat(form.original_price) : null,
-      image_url:           form.image_url.trim() || null,
-      merchant:            form.merchant.trim() || 'Manual',
-      category:            form.category,
-      is_featured:         p?.is_featured ?? false,
-      source_key:          'manual',
-      source_type:         'manual',
-      in_stock:            true,
-      is_student_relevant: true,
-      status:              'active',
-    }
-    const res  = await fetch(API, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token }, body: JSON.stringify(body) })
-    const data = await res.json()
-    setSaving(false)
-    if (!res.ok) { setMsg('Error: ' + data.error); return }
-    setMsg('Deal added!')
-    setForm({ title:'', product_url:'', sale_price:'', original_price:'', image_url:'', merchant:'', category:'Electronics', placement:'feed' })
-    onAdded()
-    setTimeout(() => setMsg(''), 3000)
-  }
-
-  const inp = (extra={}) => ({
-    style:{ padding:'7px 10px', border:'1px solid #d1d5db', borderRadius:6, fontSize:13, width:'100%', boxSizing:'border-box', ...extra.style },
-    ...extra,
-  })
-
-  return (
-    <div style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, marginBottom:20, overflow:'hidden' }}>
-      <button onClick={() => setOpen(o => !o)}
-        style={{ width:'100%', padding:'12px 16px', background:'#111', color:'#fff', border:'none', cursor:'pointer', fontSize:14, fontWeight:600, textAlign:'left', display:'flex', justifyContent:'space-between' }}>
-        <span>+ Add Deal Manually</span>
-        <span>{open ? '▲' : '▼'}</span>
-      </button>
-      {open && (
-        <form onSubmit={submit} style={{ padding:16, display:'flex', flexDirection:'column', gap:10 }}>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-            <div style={{ gridColumn:'1/-1' }}>
-              <label style={S.fieldLabel}>Title *</label>
-              <input {...inp()} placeholder="Product title" value={form.title} onChange={e => set('title', e.target.value)} />
-            </div>
-            <div style={{ gridColumn:'1/-1' }}>
-              <label style={S.fieldLabel}>Product URL *</label>
-              <input {...inp()} placeholder="https://..." value={form.product_url} onChange={e => set('product_url', e.target.value)} />
-            </div>
-            <div>
-              <label style={S.fieldLabel}>Sale Price * ($)</label>
-              <input {...inp()} type="number" step="0.01" placeholder="0.00" value={form.sale_price} onChange={e => set('sale_price', e.target.value)} />
-            </div>
-            <div>
-              <label style={S.fieldLabel}>Original Price ($)</label>
-              <input {...inp()} type="number" step="0.01" placeholder="Optional" value={form.original_price} onChange={e => set('original_price', e.target.value)} />
-            </div>
-            <div>
-              <label style={S.fieldLabel}>Merchant</label>
-              <input {...inp()} placeholder="e.g. Amazon, Best Buy" value={form.merchant} onChange={e => set('merchant', e.target.value)} />
-            </div>
-            <div>
-              <label style={S.fieldLabel}>Category</label>
-              <select {...inp()} value={form.category} onChange={e => set('category', e.target.value)}>
-                {CATEGORIES.filter(c => c !== 'All').map(c => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-            <div style={{ gridColumn:'1/-1' }}>
-              <label style={S.fieldLabel}>Image URL</label>
-              <input {...inp()} placeholder="https://... (optional)" value={form.image_url} onChange={e => set('image_url', e.target.value)} />
-            </div>
-            <div style={{ gridColumn:'1/-1' }}>
-              <label style={{ ...S.fieldLabel, marginBottom:6 }}>Placement</label>
-              <div style={{ display:'flex', gap:8 }}>
-                {PLACEMENTS.map(p => (
-                  <label key={p.value} style={{
-                    display:'flex', alignItems:'center', gap:6, cursor:'pointer', padding:'7px 12px',
-                    border: form.placement === p.value ? '2px solid #111' : '1px solid #e5e7eb',
-                    borderRadius:7, fontSize:13, fontWeight: form.placement === p.value ? 600 : 400,
-                    background: form.placement === p.value ? '#f9fafb' : '#fff',
-                  }}>
-                    <input type="radio" name="placement" value={p.value} checked={form.placement === p.value}
-                      onChange={() => set('placement', p.value)} style={{ margin:0 }} />
-                    <span>{p.label}</span>
-                    <span style={{ color:'#9ca3af', fontSize:11 }}>{p.desc}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-            <button type="submit" disabled={saving}
-              style={{ padding:'8px 20px', background:'#10b981', color:'#fff', border:'none', borderRadius:7, cursor: saving ? 'wait' : 'pointer', fontSize:13, fontWeight:600 }}>
-              {saving ? 'Adding…' : 'Add Deal'}
-            </button>
-            {msg && <span style={{ fontSize:13, color: msg.startsWith('Error') ? '#dc2626' : '#16a34a' }}>{msg}</span>}
-          </div>
-        </form>
-      )}
-    </div>
-  )
-}
-
-// ─── Layout + style helpers ───────────────────────────────────────────────────
-function Wrap({ children }) {
-  return (
-    <div style={{ fontFamily:'system-ui, sans-serif', maxWidth:1200, margin:'0 auto', padding:'32px 16px', color:'#111' }}>
-      {children}
-    </div>
-  )
-}
-
-const S = {
-  muted:        { color:'#9ca3af', fontSize:13, margin:0 },
-  fieldLabel:   { fontSize:11, color:'#6b7280', display:'block', marginBottom:3, fontWeight:600, letterSpacing:0.3, textTransform:'uppercase' },
-  primaryBtn:   { padding:'9px', background:'#111', color:'#fff', border:'none', borderRadius:7, fontSize:14, fontWeight:600, cursor:'pointer' },
-  secondaryBtn: { padding:'8px 16px', background:'#fff', color:'#111', border:'1px solid #d1d5db', borderRadius:7, fontSize:13, fontWeight:600, cursor:'pointer' },
-  refreshBtn:   { padding:'5px 12px', border:'1px solid #d1d5db', borderRadius:20, background:'#fff', cursor:'pointer', fontSize:12, color:'#666' },
-  select:       { padding:'7px 10px', border:'1px solid #d1d5db', borderRadius:7, fontSize:13, background:'#fff', cursor:'pointer' },
-  bulkBtn: (color) => ({
-    padding:'4px 10px', background:color, color:'#fff', border:'none', borderRadius:5, cursor:'pointer', fontSize:12, fontWeight:600,
-  }),
 }
