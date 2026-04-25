@@ -198,6 +198,23 @@ function Dashboard({ token, isOpen }) {
 
   function flash(text) { setMsg(text); setTimeout(() => setMsg(''), 2000) }
 
+  async function approveAllPending() {
+    const pending = deals.filter(d => d.status === 'pending')
+    if (!pending.length) return
+    if (!confirm(`Activate all ${pending.length} pending deals?`)) return
+    setMsg(`Activating ${pending.length} deals…`)
+    let ok = 0, fail = 0
+    for (const d of pending) {
+      try {
+        const r = await fetch(API, { method:'PATCH', headers: hdrs, body: JSON.stringify({ id: d.id, status: 'active' }) })
+        r.ok ? ok++ : fail++
+      } catch { fail++ }
+    }
+    setMsg(`Activated ${ok}${fail ? ` · ${fail} failed` : ''} ✅`)
+    await load()
+    setTimeout(() => setMsg(''), 4000)
+  }
+
   // ── Manual ingest trigger
   async function runIngest() {
     if (!confirm('Run ingest now? This will fetch fresh deals from SerpApi (counts against your monthly quota).')) return
@@ -228,10 +245,16 @@ function Dashboard({ token, isOpen }) {
           <h1 style={{ fontSize:20, fontWeight:700, margin:'0 0 4px' }}>eSchoolDeals — Deal Manager</h1>
           <p style={{ color:'#6b7280', fontSize:13, margin:0 }}>Review SerpApi deals, add deals manually, and control placement.</p>
         </div>
-        <button onClick={runIngest} disabled={ingesting}
-          style={{ ...S.secondaryBtn, opacity: ingesting ? 0.6 : 1, cursor: ingesting ? 'wait' : 'pointer' }}>
-          {ingesting ? '⏳ Running…' : '🔄 Run Ingest Now'}
-        </button>
+        <div style={{ display:'flex', gap:8 }}>
+          <button onClick={approveAllPending} disabled={stats.pending === 0}
+            style={{ ...S.secondaryBtn, background:'#10b981', color:'#fff', opacity: stats.pending === 0 ? 0.4 : 1, cursor: stats.pending === 0 ? 'default' : 'pointer' }}>
+            ✅ Approve All Pending ({stats.pending})
+          </button>
+          <button onClick={runIngest} disabled={ingesting}
+            style={{ ...S.secondaryBtn, opacity: ingesting ? 0.6 : 1, cursor: ingesting ? 'wait' : 'pointer' }}>
+            {ingesting ? '⏳ Running…' : '🔄 Run Ingest Now'}
+          </button>
+        </div>
       </div>
 
       {/* ── Stats cards ─────────────────────────────────────────────────────── */}
