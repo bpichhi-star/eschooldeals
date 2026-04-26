@@ -55,11 +55,14 @@ export default function HomePage() {
 
   const safeDeals = Array.isArray(deals) ? deals : []
 
-  const esdDeals = safeDeals.filter(d => d.isFeatured)
-  const featuredDeals = esdDeals.length > 0
-    ? esdDeals.slice(0, 6)
-    : [...safeDeals].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 6)
+  // ESD strip — ONLY manually curated is_featured deals, sorted by score, max 6
+  // Never auto-fills. Stays until you expire or un-feature a deal.
+  const featuredDeals = safeDeals
+    .filter(d => d.isFeatured)
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    .slice(0, 6)
 
+  // Main grid — all active deals filtered by selected category
   const gridDeals = useMemo(() => {
     const filterFn = CATEGORY_FILTERS[category] ?? (() => true)
     return safeDeals.filter(filterFn)
