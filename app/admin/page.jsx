@@ -6,7 +6,7 @@ const INGEST_API = '/api/ingest/run'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 // is_featured: false → "Main Feed" (grid only)
-// is_featured: true  → "ESD Recommended" (ESD strip + grid)h
+// is_featured: true  → "ESD Recommended" (ESD strip + grid)hh
 // The ESD strip on the homepage shows up to 6 featured deals.
 // All active deals always appear in the main grid regardless of placement.
 const ESD_CAP = 6
@@ -181,7 +181,7 @@ function Dashboard({ token, isOpen }) {
           const r = await fetch(API, { method:'DELETE', headers: hdrs, body: JSON.stringify({ id }) })
           r.ok ? ok++ : fail++
             } else if (action === 'feature' || action === 'unfeature') {
-                    const r = await fetch(API, { method:'PATCH', headers: hdrs, body: JSON.stringify({ id, is_featured: action === 'feature' }) })
+                    const r = await fetch(API, { method:'PATCH', headers: hdrs, body: JSON.stringify({ id, is_featured: action === 'feature', ...(action === 'feature' && { status: 'active' }) }) })
                     r.ok ? ok++ : fail++
         } else {
                     const status = action === 'activate' ? 'active' : action === 'pending' ? 'pending' : 'expired'
