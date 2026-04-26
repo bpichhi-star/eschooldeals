@@ -1,11 +1,11 @@
 'use client'
-import { useState } from 'react'
 
-const CATEGORIES = ['Today','Electronics','Computers','Phones','Home','Kitchen','Fashion','Sports','Travel','Toys']
+const CATEGORIES = [
+  'Today', 'Electronics', 'Computers', 'Phones',
+  'Home', 'Kitchen', 'Fashion', 'Sports', 'Travel', 'Toys',
+]
 
-export default function CategoryNav() {
-  const [active, setActive] = useState('Today')
-
+export default function CategoryNav({ active = 'Today', onChange }) {
   return (
     <nav className="cat-nav" aria-label="Deal categories">
       <div className="cat-nav-inner">
@@ -13,7 +13,7 @@ export default function CategoryNav() {
           <button
             key={cat}
             className={`cat-item${active === cat ? ' active' : ''}`}
-            onClick={() => setActive(cat)}
+            onClick={() => onChange?.(cat)}
           >
             {cat}
           </button>
@@ -22,3 +22,5 @@ export default function CategoryNav() {
     </nav>
   )
 }
+
+export { CATEGORIES }
