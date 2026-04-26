@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import NavBar from '@/components/NavBar'
 import CategoryNav from '@/components/CategoryNav'
 import PromoStrip from '@/components/PromoStrip'
@@ -13,9 +13,32 @@ function getToday() {
   }).toUpperCase()
 }
 
+const CATEGORY_FILTERS = {
+  Today:       () => true,
+  Electronics: d => d.category === 'Electronics' ||
+                    /\b(headphone|earbud|airpod|monitor|speaker|charger|cable|usb|hub|webcam|router|tv|television|camera|drone|smartwatch|tablet|kindle|ipad)\b/i.test(d.title),
+  Computers:   d => d.category === 'Computers' ||
+                    /\b(laptop|notebook|macbook|chromebook|desktop|pc tower|all.?in.?one|aio|mini pc|workstation|imac)\b/i.test(d.title),
+  Phones:      d => d.category === 'Phones' ||
+                    /\b(iphone|samsung galaxy|google pixel|smartphone|phone case|phone stand|phone holder|phone charger|cell phone)\b/i.test(d.title),
+  Home:        d => d.category === 'Home' ||
+                    /\b(vacuum|robot vacuum|lamp|furniture|sofa|couch|bed frame|mattress|pillow|blanket|chair|desk|shelf|storage|organizer|smart home|thermostat|doorbell)\b/i.test(d.title),
+  Kitchen:     d => d.category === 'Kitchen' ||
+                    /\b(blender|toaster|microwave|coffee maker|espresso|air fryer|instant pot|pressure cooker|cookware|pan set|knife set|food processor|kettle|mixer)\b/i.test(d.title),
+  Fashion:     d => d.category === 'Fashion' ||
+                    /\b(shoe|sneaker|boot|sandal|shirt|tee|jeans|jacket|coat|hoodie|sweater|dress|watch|sunglasses|wallet|handbag|purse)\b/i.test(d.title),
+  Sports:      d => d.category === 'Sports' ||
+                    /\b(yoga|fitness|dumbbell|barbell|kettlebell|treadmill|bike|cycling|tennis|basketball|football|soccer|golf|camping|hiking|outdoor)\b/i.test(d.title),
+  Travel:      d => d.category === 'Travel' ||
+                    /\b(luggage|suitcase|carry.?on|travel bag|duffel|backpack|passport|travel|garment bag)\b/i.test(d.title),
+  Toys:        d => d.category === 'Toys' ||
+                    /\b(lego|toy|puzzle|board game|action figure|doll|plush|stuffed animal|nerf|kids|playset)\b/i.test(d.title),
+}
+
 export default function HomePage() {
-  const [deals,   setDeals]   = useState([])
-  const [loading, setLoading] = useState(true)
+  const [deals,    setDeals]    = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [category, setCategory] = useState('Today')
   const today = getToday()
 
   useEffect(() => {
@@ -37,24 +60,33 @@ export default function HomePage() {
     ? esdDeals.slice(0, 6)
     : [...safeDeals].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 6)
 
-  const gridDeals = safeDeals
+  const gridDeals = useMemo(() => {
+    const filterFn = CATEGORY_FILTERS[category] ?? (() => true)
+    return safeDeals.filter(filterFn)
+  }, [safeDeals, category])
 
   return (
     <>
       <NavBar />
-      <CategoryNav />
+      <CategoryNav active={category} onChange={setCategory} />
       <div className="page-wrap">
         <main>
           <StudentHub />
           <PromoStrip deals={featuredDeals} />
           <div className="section-header">
-            <h1 className="section-title">Today's Deals</h1>
+            <h1 className="section-title">
+              {category === 'Today' ? "Today's Deals" : `${category} Deals`}
+            </h1>
             <span className="section-date">{today}</span>
           </div>
           {loading ? (
             <div className="deals-loading">Loading live deals...</div>
           ) : gridDeals.length === 0 ? (
-            <div className="deals-loading">No deals yet — check back soon.</div>
+            <div className="deals-loading">
+              {category === 'Today'
+                ? 'No deals yet — check back soon.'
+                : `No ${category} deals right now. Try another category.`}
+            </div>
           ) : (
             <div className="deal-grid">
               {gridDeals.map((deal) => (
