@@ -6,7 +6,7 @@ const INGEST_API = '/api/ingest/run'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 // is_featured: false → "Main Feed" (grid only)
-// is_featured: true  → "ESD Recommended" (ESD strip + grid)
+// is_featured: true  → "ESD Recommended" (ESD strip + grid)h
 // The ESD strip on the homepage shows up to 6 featured deals.
 // All active deals always appear in the main grid regardless of placement.
 const ESD_CAP = 6
@@ -168,7 +168,9 @@ function Dashboard({ token, isOpen }) {
     const verb = action === 'delete'   ? 'Delete' :
                  action === 'activate' ? 'Activate' :
                  action === 'pending'  ? 'Move to pending' :
-                 action === 'expire'   ? 'Expire' : action
+                 action === 'expire'   ? 'Expire' : action :
+                      action === 'feature'   ? 'ESD Recommend' :
+                                          action === 'unfeature' ? 'Remove from ESD' : action
     if (!confirm(`${verb} ${ids.length} deal${ids.length>1?'s':''}?`)) return
 
     setMsg(`${verb}ing ${ids.length}…`)
@@ -177,11 +179,14 @@ function Dashboard({ token, isOpen }) {
       try {
         if (action === 'delete') {
           const r = await fetch(API, { method:'DELETE', headers: hdrs, body: JSON.stringify({ id }) })
-          r.ok ? ok++ : fail++
+          r.ok ? ok++ : fail++h
+            } else if (action === 'feature' || action === 'unfeature') {
+                    const r = await fetch(API, { method:'PATCH', headers: hdrs, body: JSON.stringify({ id, is_featured: action === 'feature' }) })
+                    r.ok ? ok++ : fail++
         } else {
-          const status = action === 'activate' ? 'active' : action === 'pending' ? 'pending' : 'expired'
-          const r = await fetch(API, { method:'PATCH', headers: hdrs, body: JSON.stringify({ id, status }) })
-          r.ok ? ok++ : fail++
+                    const status = action === 'activate' ? 'active' : action === 'pending' ? 'pending' : 'expired'
+                    const r = await fetch(API, { method:'PATCH', headers: hdrs, body: JSON.stringify({ id, status }) })
+                    r.ok ? ok++ : fail++
         }
       } catch { fail++ }
     }
@@ -327,6 +332,8 @@ function Dashboard({ token, isOpen }) {
                 <button onClick={() => bulk('pending')}  style={S.bulkBtn('#f59e0b')}>Move to Pending</button>
                 <button onClick={() => bulk('expire')}   style={S.bulkBtn('#6b7280')}>Expire</button>
                 <button onClick={() => bulk('delete')}   style={S.bulkBtn('#dc2626')}>Delete</button>
+                            <button onClick={() => bulk('feature')}   style={S.bulkBtn('#f59e0b')}>⭐ ESD Recommend</button>
+                            <button onClick={() => bulk('unfeature')} style={S.bulkBtn('#6b7280')}>Remove from ESD</button>
                 <button onClick={() => setSelected(new Set())} style={{ ...S.bulkBtn('#6b7280'), background:'transparent', color:'#6b7280' }}>Clear</button>
               </>
             )}
