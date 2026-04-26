@@ -168,7 +168,7 @@ function Dashboard({ token, isOpen }) {
     const verb = action === 'delete'   ? 'Delete' :
                  action === 'activate' ? 'Activate' :
                  action === 'pending'  ? 'Move to pending' :
-                 action === 'expire'   ? 'Expire' : action :
+                 action === 'expire'   ? 'Expire' :
                       action === 'feature'   ? 'ESD Recommend' :
                                           action === 'unfeature' ? 'Remove from ESD' : action
     if (!confirm(`${verb} ${ids.length} deal${ids.length>1?'s':''}?`)) return
@@ -179,7 +179,7 @@ function Dashboard({ token, isOpen }) {
       try {
         if (action === 'delete') {
           const r = await fetch(API, { method:'DELETE', headers: hdrs, body: JSON.stringify({ id }) })
-          r.ok ? ok++ : fail++h
+          r.ok ? ok++ : fail++
             } else if (action === 'feature' || action === 'unfeature') {
                     const r = await fetch(API, { method:'PATCH', headers: hdrs, body: JSON.stringify({ id, is_featured: action === 'feature' }) })
                     r.ok ? ok++ : fail++
