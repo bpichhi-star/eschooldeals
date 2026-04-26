@@ -5,10 +5,6 @@ const API = '/api/admin/deals'
 const INGEST_API = '/api/ingest/run'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-// is_featured: false → "Main Feed" (grid only)
-// is_featured: true  → "ESD Recommended" (ESD strip + grid)hh
-// The ESD strip on the homepage shows up to 6 featured deals.
-// All active deals always appear in the main grid regardless of placement.
 const ESD_CAP = 6
 
 const PLACEMENTS = [
@@ -93,7 +89,6 @@ function Dashboard({ token, isOpen }) {
 
   const hdrs = useMemo(() => ({ 'Content-Type':'application/json', Authorization:'Bearer '+token }), [token])
 
-  // ── Load — fetches ALL deals so stats are accurate, then filters client-side
   const load = useCallback(async () => {
     setLoading(true); setMsg('')
     try {
@@ -101,14 +96,13 @@ function Dashboard({ token, isOpen }) {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       setDeals(Array.isArray(data) ? data : [])
-      setSelected(new Set()) // clear selection on reload
+      setSelected(new Set())
     } catch (e) { setMsg('Error: '+e.message) }
     finally { setLoading(false) }
   }, [hdrs])
 
   useEffect(() => { load() }, [load])
 
-  // ── Stats (computed from full deal list, not filtered)
   const stats = useMemo(() => ({
     total:   deals.length,
     pending: deals.filter(d => d.status === 'pending').length,
@@ -119,7 +113,13 @@ function Dashboard({ token, isOpen }) {
 
   const overCap = stats.esd > ESD_CAP
 
-  // ── Filtered + sorted view
+  // ESD featured deals for the panel
+  const esdDeals = useMemo(() =>
+    deals
+      .filter(d => d.status === 'active' && d.is_featured)
+      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+  , [deals])
+
   const shown = useMemo(() => {
     let list = deals
     if (filter   !== 'all')  list = list.filter(d => d.status === filter)
@@ -142,7 +142,6 @@ function Dashboard({ token, isOpen }) {
     return sorted
   }, [deals, filter, category, sort, search])
 
-  // ── Per-deal update
   async function update(id, updates) {
     setMsg('')
     const res  = await fetch(API, { method:'PATCH', headers: hdrs, body: JSON.stringify({ id, ...updates }) })
@@ -152,7 +151,6 @@ function Dashboard({ token, isOpen }) {
     flash('Saved')
   }
 
-  // ── Per-deal delete
   async function remove(id) {
     if (!confirm('Delete this deal permanently?')) return
     const res = await fetch(API, { method:'DELETE', headers: hdrs, body: JSON.stringify({ id }) })
@@ -161,7 +159,6 @@ function Dashboard({ token, isOpen }) {
     setSelected(prev => { const n = new Set(prev); n.delete(id); return n })
   }
 
-  // ── Bulk actions
   async function bulk(action) {
     const ids = [...selected]
     if (!ids.length) return
@@ -169,8 +166,8 @@ function Dashboard({ token, isOpen }) {
                  action === 'activate' ? 'Activate' :
                  action === 'pending'  ? 'Move to pending' :
                  action === 'expire'   ? 'Expire' :
-                      action === 'feature'   ? 'ESD Recommend' :
-                                          action === 'unfeature' ? 'Remove from ESD' : action
+                 action === 'feature'   ? 'ESD Recommend' :
+                 action === 'unfeature' ? 'Remove from ESD' : action
     if (!confirm(`${verb} ${ids.length} deal${ids.length>1?'s':''}?`)) return
 
     setMsg(`${verb}ing ${ids.length}…`)
@@ -180,13 +177,13 @@ function Dashboard({ token, isOpen }) {
         if (action === 'delete') {
           const r = await fetch(API, { method:'DELETE', headers: hdrs, body: JSON.stringify({ id }) })
           r.ok ? ok++ : fail++
-            } else if (action === 'feature' || action === 'unfeature') {
-                    const r = await fetch(API, { method:'PATCH', headers: hdrs, body: JSON.stringify({ id, is_featured: action === 'feature', ...(action === 'feature' && { status: 'active' }) }) })
-                    r.ok ? ok++ : fail++
+        } else if (action === 'feature' || action === 'unfeature') {
+          const r = await fetch(API, { method:'PATCH', headers: hdrs, body: JSON.stringify({ id, is_featured: action === 'feature', ...(action === 'feature' && { status: 'active' }) }) })
+          r.ok ? ok++ : fail++
         } else {
-                    const status = action === 'activate' ? 'active' : action === 'pending' ? 'pending' : 'expired'
-                    const r = await fetch(API, { method:'PATCH', headers: hdrs, body: JSON.stringify({ id, status }) })
-                    r.ok ? ok++ : fail++
+          const status = action === 'activate' ? 'active' : action === 'pending' ? 'pending' : 'expired'
+          const r = await fetch(API, { method:'PATCH', headers: hdrs, body: JSON.stringify({ id, status }) })
+          r.ok ? ok++ : fail++
         }
       } catch { fail++ }
     }
@@ -224,7 +221,6 @@ function Dashboard({ token, isOpen }) {
     setTimeout(() => setMsg(''), 4000)
   }
 
-  // ── Manual ingest trigger
   async function runIngest() {
     if (!confirm('Run ingest now? This will fetch fresh deals from SerpApi (counts against your monthly quota).')) return
     setIngesting(true); setMsg('Running ingest — this may take 30 seconds…')
@@ -281,6 +277,9 @@ function Dashboard({ token, isOpen }) {
         </div>
       )}
 
+      {/* ── ESD Recommended Panel ───────────────────────────────────────────── */}
+      <ESDPanel deals={esdDeals} onUpdate={update} onDelete={remove} />
+
       {/* ── Add Deal form ───────────────────────────────────────────────────── */}
       <AddDealForm token={token} onAdded={load} />
 
@@ -332,8 +331,8 @@ function Dashboard({ token, isOpen }) {
                 <button onClick={() => bulk('pending')}  style={S.bulkBtn('#f59e0b')}>Move to Pending</button>
                 <button onClick={() => bulk('expire')}   style={S.bulkBtn('#6b7280')}>Expire</button>
                 <button onClick={() => bulk('delete')}   style={S.bulkBtn('#dc2626')}>Delete</button>
-                            <button onClick={() => bulk('feature')}   style={S.bulkBtn('#f59e0b')}>⭐ ESD Recommend</button>
-                            <button onClick={() => bulk('unfeature')} style={S.bulkBtn('#6b7280')}>Remove from ESD</button>
+                <button onClick={() => bulk('feature')}  style={S.bulkBtn('#6366f1')}>⭐ ESD Recommend</button>
+                <button onClick={() => bulk('unfeature')} style={S.bulkBtn('#6b7280')}>Remove from ESD</button>
                 <button onClick={() => setSelected(new Set())} style={{ ...S.bulkBtn('#6b7280'), background:'transparent', color:'#6b7280' }}>Clear</button>
               </>
             )}
@@ -359,6 +358,157 @@ function Dashboard({ token, isOpen }) {
         ))}
       </div>
     </Wrap>
+  )
+}
+
+// ─── ESD Recommended Panel ────────────────────────────────────────────────────
+function ESDPanel({ deals, onUpdate, onDelete }) {
+  const [editingId,    setEditingId]    = useState(null)
+  const [editTitle,    setEditTitle]    = useState('')
+  const [editScore,    setEditScore]    = useState('')
+  const [saving,       setSaving]       = useState(false)
+
+  if (!deals.length) return (
+    <div style={{ border:'1px dashed #e5e7eb', borderRadius:10, padding:'16px 20px', marginBottom:20, background:'#fafafa' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+        <span style={{ fontSize:15, fontWeight:700 }}>⭐ ESD Recommended</span>
+        <span style={{ fontSize:11, color:'#9ca3af', background:'#f3f4f6', padding:'2px 8px', borderRadius:10 }}>0 / 6</span>
+      </div>
+      <p style={{ fontSize:13, color:'#9ca3af', margin:0 }}>No featured deals yet. Mark deals as ⭐ ESD Recommended to add them here.</p>
+    </div>
+  )
+
+  function startEdit(deal) {
+    setEditingId(deal.id)
+    setEditTitle(deal.title)
+    setEditScore(String(deal.score ?? 0))
+  }
+
+  async function saveEdit(deal) {
+    setSaving(true)
+    const updates = {}
+    if (editTitle.trim() && editTitle.trim() !== deal.title) updates.title = editTitle.trim()
+    const newScore = parseFloat(editScore)
+    if (Number.isFinite(newScore) && newScore !== deal.score) updates.score = newScore
+    if (Object.keys(updates).length) await onUpdate(deal.id, updates)
+    setEditingId(null)
+    setSaving(false)
+  }
+
+  function cancelEdit() { setEditingId(null) }
+
+  async function removeFromESD(id) {
+    await onUpdate(id, { is_featured: false })
+  }
+
+  return (
+    <div style={{ border:'1px solid #e0e7ff', borderRadius:10, marginBottom:20, overflow:'hidden', background:'#fafbff' }}>
+      {/* Header */}
+      <div style={{ padding:'12px 16px', borderBottom:'1px solid #e0e7ff', display:'flex', alignItems:'center', gap:10, background:'#fff' }}>
+        <span style={{ fontSize:15, fontWeight:700 }}>⭐ ESD Recommended</span>
+        <span style={{
+          fontSize:11, fontWeight:700,
+          background: deals.length > ESD_CAP ? '#fef2f2' : '#ede9fe',
+          color: deals.length > ESD_CAP ? '#dc2626' : '#6366f1',
+          padding:'2px 9px', borderRadius:10,
+        }}>
+          {deals.length} / {ESD_CAP}
+        </span>
+        <span style={{ fontSize:12, color:'#6b7280', marginLeft:4 }}>
+          Showing in the ESD strip on homepage · sorted by score
+        </span>
+      </div>
+
+      {/* Deal rows */}
+      <div style={{ padding:'12px 16px', display:'flex', flexDirection:'column', gap:10 }}>
+        {deals.map((deal, idx) => {
+          const isEditing = editingId === deal.id
+          const proxySrc = deal.image_url ? `/api/img?url=${encodeURIComponent(deal.image_url)}` : ''
+          return (
+            <div key={deal.id} style={{
+              display:'flex', gap:12, alignItems:'flex-start',
+              background:'#fff', border: idx < ESD_CAP ? '1px solid #e0e7ff' : '1px solid #fecaca',
+              borderRadius:8, padding:'10px 12px',
+            }}>
+              {/* Rank */}
+              <div style={{ fontSize:11, fontWeight:800, color: idx < ESD_CAP ? '#6366f1' : '#dc2626', width:18, flexShrink:0, paddingTop:2 }}>
+                {idx < ESD_CAP ? `#${idx+1}` : '✕'}
+              </div>
+
+              {/* Image */}
+              {proxySrc ? (
+                <img src={proxySrc} alt="" loading="lazy"
+                  style={{ width:52, height:52, objectFit:'contain', borderRadius:5, border:'1px solid #f3f4f6', flexShrink:0, background:'#fafafa' }}
+                  onError={e => { e.currentTarget.style.display='none' }} />
+              ) : (
+                <div style={{ width:52, height:52, borderRadius:5, border:'1px dashed #e5e7eb', flexShrink:0, background:'#fafafa' }} />
+              )}
+
+              {/* Title + score — editable */}
+              <div style={{ flex:1, minWidth:0 }}>
+                {isEditing ? (
+                  <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                    <input
+                      value={editTitle}
+                      onChange={e => setEditTitle(e.target.value)}
+                      style={{ padding:'5px 8px', border:'1px solid #6366f1', borderRadius:5, fontSize:12, width:'100%', boxSizing:'border-box' }}
+                    />
+                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                      <label style={{ fontSize:11, color:'#6b7280' }}>Score:</label>
+                      <input type="number" step="1"
+                        value={editScore}
+                        onChange={e => setEditScore(e.target.value)}
+                        style={{ width:70, padding:'3px 6px', border:'1px solid #d1d5db', borderRadius:5, fontSize:12 }}
+                      />
+                    </div>
+                    <div style={{ display:'flex', gap:6 }}>
+                      <button onClick={() => saveEdit(deal)} disabled={saving}
+                        style={{ padding:'4px 12px', background:'#6366f1', color:'#fff', border:'none', borderRadius:5, fontSize:12, cursor:'pointer' }}>
+                        {saving ? 'Saving…' : 'Save'}
+                      </button>
+                      <button onClick={cancelEdit}
+                        style={{ padding:'4px 10px', background:'#f3f4f6', color:'#374151', border:'none', borderRadius:5, fontSize:12, cursor:'pointer' }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p style={{ fontSize:12, fontWeight:500, margin:'0 0 3px', lineHeight:1.4, wordBreak:'break-word' }}>{deal.title}</p>
+                    <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
+                      <span style={{ fontSize:13, fontWeight:700 }}>${Number(deal.sale_price ?? 0).toFixed(2)}</span>
+                      <span style={{ fontSize:11, color:'#6b7280' }}>Score: <strong>{Number(deal.score ?? 0).toFixed(0)}</strong></span>
+                      <span style={{ fontSize:11, color:'#9ca3af' }}>{deal.merchant}</span>
+                      {idx >= ESD_CAP && (
+                        <span style={{ fontSize:10, color:'#dc2626', fontWeight:600 }}>Over cap — hidden</span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Actions */}
+              {!isEditing && (
+                <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+                  <button onClick={() => startEdit(deal)}
+                    style={{ padding:'5px 10px', background:'#f3f4f6', color:'#374151', border:'1px solid #e5e7eb', borderRadius:6, cursor:'pointer', fontSize:12 }}>
+                    ✎ Edit
+                  </button>
+                  <button onClick={() => removeFromESD(deal.id)}
+                    style={{ padding:'5px 10px', background:'#fff', color:'#6366f1', border:'1px solid #c7d2fe', borderRadius:6, cursor:'pointer', fontSize:12 }}>
+                    Remove
+                  </button>
+                  <button onClick={() => onDelete(deal.id)}
+                    style={{ padding:'5px 10px', background:'#fff', color:'#dc2626', border:'1px solid #fecaca', borderRadius:6, cursor:'pointer', fontSize:12 }}>
+                    🗑
+                  </button>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
@@ -398,7 +548,6 @@ function Card({ deal: d, selected, onSelect, onUpdate, onDelete }) {
       boxShadow:'0 1px 3px rgba(0,0,0,.05)',
       display:'flex', flexDirection:'column', gap:10,
     }}>
-      {/* Header: select + status + source */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
         <label style={{ display:'flex', alignItems:'center', gap:6, cursor:'pointer' }}>
           <input type="checkbox" checked={selected} onChange={onSelect} />
@@ -409,7 +558,6 @@ function Card({ deal: d, selected, onSelect, onUpdate, onDelete }) {
         <span style={{ fontSize:10, color:'#9ca3af' }}>{d.source_key || '—'}</span>
       </div>
 
-      {/* Image preview + title */}
       <div style={{ display:'flex', gap:12 }}>
         {d.image_url ? (
           <img src={d.image_url} alt="" loading="lazy"
@@ -421,7 +569,6 @@ function Card({ deal: d, selected, onSelect, onUpdate, onDelete }) {
         <p style={{ fontSize:13, fontWeight:500, margin:0, lineHeight:1.4, flex:1, wordBreak:'break-word' }}>{d.title}</p>
       </div>
 
-      {/* Price + discount + score */}
       <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
         <span style={{ fontSize:18, fontWeight:700 }}>${Number(d.sale_price ?? 0).toFixed(2)}</span>
         {d.original_price != null && Number(d.original_price) > 0 && (
@@ -453,13 +600,11 @@ function Card({ deal: d, selected, onSelect, onUpdate, onDelete }) {
         </span>
       </div>
 
-      {/* Link */}
       <a href={d.product_url} target="_blank" rel="noopener noreferrer"
         style={{ fontSize:11, color:'#6366f1', textDecoration:'none', wordBreak:'break-all' }}>
         {(d.product_url || '').substring(0, 80)}{(d.product_url || '').length > 80 ? '…' : ''}
       </a>
 
-      {/* Status segmented control */}
       <div style={{ background:'#f9fafb', borderRadius:7, padding:'8px 10px' }}>
         <p style={S.fieldLabel}>STATUS</p>
         <div style={{ display:'flex', gap:6 }}>
@@ -478,7 +623,6 @@ function Card({ deal: d, selected, onSelect, onUpdate, onDelete }) {
         </div>
       </div>
 
-      {/* Placement selector — only for active */}
       {isActive && (
         <div style={{ background:'#f9fafb', borderRadius:7, padding:'8px 10px' }}>
           <p style={S.fieldLabel}>PLACEMENT</p>
@@ -500,7 +644,6 @@ function Card({ deal: d, selected, onSelect, onUpdate, onDelete }) {
         </div>
       )}
 
-      {/* Delete */}
       <div style={{ display:'flex' }}>
         <button onClick={() => onDelete(d.id)} style={{
           marginLeft:'auto', padding:'5px 10px', background:'#fff', color:'#dc2626',
