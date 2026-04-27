@@ -1,8 +1,7 @@
 'use client'
 
 const CATEGORIES = [
-  'Today', 'Electronics', 'Computers', 'Phones',
-  'Home', 'Kitchen', 'Fashion', 'Sports', 'Travel', 'Toys',
+  'Today', 'Electronics', 'Computers', 'Accessories', 'Phones', 'Home', 'Fashion', 'Sports',
 ]
 
 export default function CategoryNav({ active = 'Today', onChange }) {
