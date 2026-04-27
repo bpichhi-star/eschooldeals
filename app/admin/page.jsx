@@ -253,29 +253,31 @@ function Dashboard({ token, isOpen }) {
         </div>
       )}
 
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:12, marginBottom:6 }}>
-        <div>
-          <h1 style={{ fontSize:20, fontWeight:700, margin:'0 0 4px' }}>eSchoolDeals — Deal Manager</h1>
-          <p style={{ color:'#6b7280', fontSize:13, margin:0 }}>Review RSS deals, add deals manually, and control placement.</p>
-        </div>
-        <div style={{ display:'flex', gap:8 }}>
-          <button onClick={approveAllPending} disabled={stats.pending === 0}
-            style={{ ...S.secondaryBtn, background:'#10b981', color:'#fff', opacity: stats.pending === 0 ? 0.4 : 1, cursor: stats.pending === 0 ? 'default' : 'pointer' }}>
+      <div style={{ marginBottom:16 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:8, marginBottom:12 }}>
+          <div>
+            <h1 style={{ fontSize:20, fontWeight:700, margin:'0 0 2px' }}>eSchoolDeals — Deal Manager</h1>
+            <p style={{ color:'#6b7280', fontSize:13, margin:0 }}>Review RSS deals, add deals manually, and control placement.</p>
+          </div>
+          <button onClick={approveAllPending} disabled={stats.pending === 0} style={{ ...S.secondaryBtn, background:'#10b981', color:'#fff', opacity: stats.pending === 0 ? 0.4 : 1, cursor: stats.pending === 0 ? 'default' : 'pointer' }}>
             ✅ Approve All Pending ({stats.pending})
           </button>
-          <div style={{ display:'flex', flexDirection:'column', gap:8, alignItems:'flex-end' }}>
-              <div style={{ display:'flex', gap:6, flexWrap:'wrap', justifyContent:'flex-end', maxWidth:420 }}>
-                {[['walmart','Walmart'],['target','Target'],['slickdeals','Slickdeals'],['edealinfo','eDealInfo'],['dealnews','DealNews']].map(([key, label]) => (
-                  <label key={key} style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, cursor:'pointer', padding:'4px 10px', border:'1px solid #d1d5db', borderRadius:6, background: ingestSources[key] ? '#f0fdf4' : '#f9fafb', userSelect:'none', whiteSpace:'nowrap' }}>
-                    <input type="checkbox" checked={!!ingestSources[key]} onChange={e => setIngestSources(p => ({ ...p, [key]: e.target.checked }))} style={{ margin:0, cursor:'pointer' }} />
-                    {label}
-                  </label>
-                ))}
-              </div>
-              <button onClick={runIngest} disabled={ingesting} style={{ ...S.secondaryBtn, opacity: ingesting ? 0.6 : 1, cursor: ingesting ? 'wait' : 'pointer' }}>
-                {ingesting ? '⏳ Running...' : '🔄 Run Ingest Now'}
-              </button>
-            </div>
+        </div>
+        <div style={{ background:'#f9fafb', border:'1px solid #e5e7eb', borderRadius:10, padding:'12px 16px', display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
+          <span style={{ fontSize:12, fontWeight:700, color:'#374151', textTransform:'uppercase', letterSpacing:0.4, whiteSpace:'nowrap' }}>Run Ingest:</span>
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap', flex:1 }}>
+            {[['walmart','Walmart'],['target','Target'],['slickdeals','Slickdeals'],['edealinfo','eDealInfo'],['dealnews','DealNews']].map(([key, label]) => (
+              <label key={key} style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, cursor:'pointer', padding:'6px 12px', border: ingestSources[key] ? '2px solid #10b981' : '1px solid #d1d5db', borderRadius:7, background: ingestSources[key] ? '#f0fdf4' : '#fff', userSelect:'none', whiteSpace:'nowrap', fontWeight: ingestSources[key] ? 600 : 400 }}>
+                <input type="checkbox" checked={!!ingestSources[key]} onChange={e => setIngestSources(p => ({ ...p, [key]: e.target.checked }))} style={{ margin:0, cursor:'pointer', width:14, height:14 }} />
+                {label}
+              </label>
+            ))}
+          </div>
+          <button onClick={runIngest} disabled={ingesting} style={{ ...S.secondaryBtn, whiteSpace:'nowrap', opacity: ingesting ? 0.6 : 1, cursor: ingesting ? 'wait' : 'pointer' }}>
+            {ingesting ? '⏳ Running...' : '🔄 Run Ingest Now'}
+          </button>
+        </div>
+      </div>
         </div>
       </div>
 
