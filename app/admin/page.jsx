@@ -87,6 +87,7 @@ function Dashboard({ token, isOpen }) {
   const [msg,      setMsg]      = useState('')
   const [ingesting,setIngesting]= useState(false)
   const [ingestSources, setIngestSources] = useState({ walmart: true, target: true, slickdeals: true, edealinfo: true, dealnews: true })
+  const [sourceCounts, setSourceCounts] = useState({})
 
   const hdrs = useMemo(() => ({ 'Content-Type':'application/json', Authorization:'Bearer '+token }), [token])
 
@@ -111,6 +112,17 @@ function Dashboard({ token, isOpen }) {
     esd:     deals.filter(d => d.status === 'active' && d.is_featured).length,
     expired: deals.filter(d => d.status === 'expired').length,
   }), [deals])
+
+  // Per-source active deal counts — derived from loaded deals
+  const sourceCountsMap = useMemo(() => {
+    const map = {}
+    deals.forEach(d => {
+      if (d.status !== 'active') return
+      const src = (d.source_key || '').split('-')[0] // 'slickdeals-frontpage' -> 'slickdeals'
+      map[src] = (map[src] || 0) + 1
+    })
+    return map
+  }, [deals])
 
   const overCap = stats.esd > ESD_CAP
 
@@ -270,6 +282,11 @@ function Dashboard({ token, isOpen }) {
               <label key={key} style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, cursor:'pointer', padding:'6px 12px', border: ingestSources[key] ? '2px solid #10b981' : '1px solid #d1d5db', borderRadius:7, background: ingestSources[key] ? '#f0fdf4' : '#fff', userSelect:'none', whiteSpace:'nowrap', fontWeight: ingestSources[key] ? 600 : 400 }}>
                 <input type="checkbox" checked={!!ingestSources[key]} onChange={e => setIngestSources(p => ({ ...p, [key]: e.target.checked }))} style={{ margin:0, cursor:'pointer', width:14, height:14 }} />
                 {label}
+                {sourceCountsMap[key] > 0 && (
+                  <span style={{ fontSize:11, fontWeight:700, background: ingestSources[key] ? '#dcfce7' : '#f3f4f6', color: ingestSources[key] ? '#15803d' : '#6b7280', borderRadius:10, padding:'1px 6px', marginLeft:2 }}>
+                    {sourceCountsMap[key]}
+                  </span>
+                )}
               </label>
             ))}
           </div>
@@ -286,6 +303,21 @@ function Dashboard({ token, isOpen }) {
         <StatCard label="ESD Recommended" value={`${stats.esd} / ${ESD_CAP}`} color={overCap ? '#dc2626' : '#6366f1'} />
         <StatCard label="Total Deals" value={stats.total} color="#374151" />
       </div>
+
+      {/* ── Source breakdown ─────────────────────────────────────────────────── */}
+      {Object.keys(sourceCountsMap).length > 0 && (
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:16 }}>
+          <span style={{ fontSize:11, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:0.4, alignSelf:'center' }}>Active by source:</span>
+          {Object.entries(sourceCountsMap).sort((a,b) => b[1]-a[1]).map(([src, count]) => (
+            <span key={src} style={{ fontSize:12, fontWeight:600, padding:'3px 10px', borderRadius:20, background:'#f3f4f6', color:'#374151' }}>
+              {src}: <strong>{count}</strong>
+            </span>
+          ))}
+          <span style={{ fontSize:12, fontWeight:600, padding:'3px 10px', borderRadius:20, background:'#e0f2fe', color:'#0369a1', marginLeft:'auto' }}>
+            Total active: <strong>{stats.active}</strong>
+          </span>
+        </div>
+      )}
 
       {overCap && (
         <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:13, color:'#991b1b' }}>
