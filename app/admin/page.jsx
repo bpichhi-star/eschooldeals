@@ -222,7 +222,7 @@ function Dashboard({ token, isOpen }) {
   }
 
   async function runIngest() {
-    if (!confirm('Run ingest now? This will fetch fresh deals from SerpApi (counts against your monthly quota).')) return
+    if (!confirm('Run ingest now? This will fetch fresh deals from all RSS sources (Walmart, Slickdeals, eDealInfo, DealNews).')) return
     setIngesting(true); setMsg('Running ingest — this may take 30 seconds…')
     try {
       const res  = await fetch(INGEST_API, { method:'POST', headers: hdrs })
@@ -248,7 +248,7 @@ function Dashboard({ token, isOpen }) {
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:12, marginBottom:6 }}>
         <div>
           <h1 style={{ fontSize:20, fontWeight:700, margin:'0 0 4px' }}>eSchoolDeals — Deal Manager</h1>
-          <p style={{ color:'#6b7280', fontSize:13, margin:0 }}>Review SerpApi deals, add deals manually, and control placement.</p>
+          <p style={{ color:'#6b7280', fontSize:13, margin:0 }}>Review RSS deals, add deals manually, and control placement.</p>
         </div>
         <div style={{ display:'flex', gap:8 }}>
           <button onClick={approveAllPending} disabled={stats.pending === 0}
