@@ -263,11 +263,11 @@ function Dashboard({ token, isOpen }) {
             style={{ ...S.secondaryBtn, background:'#10b981', color:'#fff', opacity: stats.pending === 0 ? 0.4 : 1, cursor: stats.pending === 0 ? 'default' : 'pointer' }}>
             ✅ Approve All Pending ({stats.pending})
           </button>
-          <div style={{ display:'flex', flexDirection:'column', gap:6, alignItems:'flex-end' }}>
-              <div style={{ display:'flex', gap:6, flexWrap:'wrap', justifyContent:'flex-end' }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:8, alignItems:'flex-end' }}>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap', justifyContent:'flex-end', maxWidth:420 }}>
                 {[['walmart','Walmart'],['target','Target'],['slickdeals','Slickdeals'],['edealinfo','eDealInfo'],['dealnews','DealNews']].map(([key, label]) => (
-                  <label key={key} style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, cursor:'pointer', padding:'3px 8px', border:'1px solid #e5e7eb', borderRadius:6, background: ingestSources[key] ? '#f0fdf4' : '#fff', userSelect:'none' }}>
-                    <input type="checkbox" checked={!!ingestSources[key]} onChange={e => setIngestSources(p => ({ ...p, [key]: e.target.checked }))} style={{ margin:0 }} />
+                  <label key={key} style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, cursor:'pointer', padding:'4px 10px', border:'1px solid #d1d5db', borderRadius:6, background: ingestSources[key] ? '#f0fdf4' : '#f9fafb', userSelect:'none', whiteSpace:'nowrap' }}>
+                    <input type="checkbox" checked={!!ingestSources[key]} onChange={e => setIngestSources(p => ({ ...p, [key]: e.target.checked }))} style={{ margin:0, cursor:'pointer' }} />
                     {label}
                   </label>
                 ))}
