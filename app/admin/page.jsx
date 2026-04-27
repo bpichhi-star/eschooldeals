@@ -278,8 +278,6 @@ function Dashboard({ token, isOpen }) {
           </button>
         </div>
       </div>
-        </div>
-      </div>
 
       {/* ── Stats cards ─────────────────────────────────────────────────────── */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:10, margin:'16px 0' }}>
