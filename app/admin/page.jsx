@@ -86,6 +86,7 @@ function Dashboard({ token, isOpen }) {
   const [selected, setSelected] = useState(new Set())
   const [msg,      setMsg]      = useState('')
   const [ingesting,setIngesting]= useState(false)
+  const [ingestSources, setIngestSources] = useState({ walmart: true, slickdeals: true, edealinfo: true, dealnews: true })
 
   const hdrs = useMemo(() => ({ 'Content-Type':'application/json', Authorization:'Bearer '+token }), [token])
 
@@ -221,19 +222,26 @@ function Dashboard({ token, isOpen }) {
     setTimeout(() => setMsg(''), 4000)
   }
 
+  const SOURCE_LABELS = { walmart: 'Walmart', slickdeals: 'Slickdeals', edealinfo: 'eDealInfo', dealnews: 'DealNews' }
+
   async function runIngest() {
-    if (!confirm('Run ingest now? This will fetch fresh deals from all RSS sources (Walmart, Slickdeals, eDealInfo, DealNews).')) return
-    setIngesting(true); setMsg('Running ingest — this may take 30 seconds…')
+    const selected = Object.entries(ingestSources).filter(([,v]) => v).map(([k]) => k)
+    if (selected.length === 0) { setMsg('Select at least one source'); return }
+    const names = selected.map(s => SOURCE_LABELS[s]).join(', ')
+    if (!confirm('Run ingest for: ' + names + '?')) return
+    setIngesting(true); setMsg('Running ingest (' + names + ') — this may take 30 seconds...')
     try {
-      const res  = await fetch(INGEST_API, { method:'POST', headers: hdrs })
+      const res = await fetch(INGEST_API, { method:'POST', headers: hdrs, body: JSON.stringify({ sources: selected }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Ingest failed')
-      setMsg(`Ingest done. New: ${data.upserted ?? data.count ?? '?'}`)
+      const counts = selected.map(s => SOURCE_LABELS[s] + ': ' + (data[s] ?? 0)).join(' · ')
+      setMsg('Ingest done — ' + counts + ' · Upserted: ' + (data.upserted ?? data.count ?? '?'))
       await load()
-    } catch (e) { setMsg('Ingest error: ' + e.message) }
-    finally {
+    } catch (e) {
+      setMsg('Ingest error: ' + e.message)
+    } finally {
       setIngesting(false)
-      setTimeout(() => setMsg(''), 6000)
+      setTimeout(() => setMsg(''), 8000)
     }
   }
 
@@ -255,10 +263,19 @@ function Dashboard({ token, isOpen }) {
             style={{ ...S.secondaryBtn, background:'#10b981', color:'#fff', opacity: stats.pending === 0 ? 0.4 : 1, cursor: stats.pending === 0 ? 'default' : 'pointer' }}>
             ✅ Approve All Pending ({stats.pending})
           </button>
-          <button onClick={runIngest} disabled={ingesting}
-            style={{ ...S.secondaryBtn, opacity: ingesting ? 0.6 : 1, cursor: ingesting ? 'wait' : 'pointer' }}>
-            {ingesting ? '⏳ Running…' : '🔄 Run Ingest Now'}
-          </button>
+          <div style={{ display:'flex', flexDirection:'column', gap:6, alignItems:'flex-end' }}>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap', justifyContent:'flex-end' }}>
+                {[['walmart','Walmart'],['slickdeals','Slickdeals'],['edealinfo','eDealInfo'],['dealnews','DealNews']].map(([key, label]) => (
+                  <label key={key} style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, cursor:'pointer', padding:'3px 8px', border:'1px solid #e5e7eb', borderRadius:6, background: ingestSources[key] ? '#f0fdf4' : '#fff', userSelect:'none' }}>
+                    <input type="checkbox" checked={!!ingestSources[key]} onChange={e => setIngestSources(p => ({ ...p, [key]: e.target.checked }))} style={{ margin:0 }} />
+                    {label}
+                  </label>
+                ))}
+              </div>
+              <button onClick={runIngest} disabled={ingesting} style={{ ...S.secondaryBtn, opacity: ingesting ? 0.6 : 1, cursor: ingesting ? 'wait' : 'pointer' }}>
+                {ingesting ? '⏳ Running...' : '🔄 Run Ingest Now'}
+              </button>
+            </div>
         </div>
       </div>
 
