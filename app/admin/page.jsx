@@ -86,7 +86,7 @@ function Dashboard({ token, isOpen }) {
   const [selected, setSelected] = useState(new Set())
   const [msg,      setMsg]      = useState('')
   const [ingesting,setIngesting]= useState(false)
-  const [ingestSources, setIngestSources] = useState({ walmart: true, slickdeals: true, edealinfo: true, dealnews: true })
+  const [ingestSources, setIngestSources] = useState({ walmart: true, target: true, slickdeals: true, edealinfo: true, dealnews: true })
 
   const hdrs = useMemo(() => ({ 'Content-Type':'application/json', Authorization:'Bearer '+token }), [token])
 
@@ -222,7 +222,7 @@ function Dashboard({ token, isOpen }) {
     setTimeout(() => setMsg(''), 4000)
   }
 
-  const SOURCE_LABELS = { walmart: 'Walmart', slickdeals: 'Slickdeals', edealinfo: 'eDealInfo', dealnews: 'DealNews' }
+  const SOURCE_LABELS = { walmart: 'Walmart', target: 'Target', slickdeals: 'Slickdeals', edealinfo: 'eDealInfo', dealnews: 'DealNews' }
 
   async function runIngest() {
     const selected = Object.entries(ingestSources).filter(([,v]) => v).map(([k]) => k)
@@ -265,7 +265,7 @@ function Dashboard({ token, isOpen }) {
           </button>
           <div style={{ display:'flex', flexDirection:'column', gap:6, alignItems:'flex-end' }}>
               <div style={{ display:'flex', gap:6, flexWrap:'wrap', justifyContent:'flex-end' }}>
-                {[['walmart','Walmart'],['slickdeals','Slickdeals'],['edealinfo','eDealInfo'],['dealnews','DealNews']].map(([key, label]) => (
+                {[['walmart','Walmart'],['target','Target'],['slickdeals','Slickdeals'],['edealinfo','eDealInfo'],['dealnews','DealNews']].map(([key, label]) => (
                   <label key={key} style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, cursor:'pointer', padding:'3px 8px', border:'1px solid #e5e7eb', borderRadius:6, background: ingestSources[key] ? '#f0fdf4' : '#fff', userSelect:'none' }}>
                     <input type="checkbox" checked={!!ingestSources[key]} onChange={e => setIngestSources(p => ({ ...p, [key]: e.target.checked }))} style={{ margin:0 }} />
                     {label}
