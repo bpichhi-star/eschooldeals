@@ -1,23 +1,52 @@
 export default function DealCard({ deal }) {
-  const salePrice = deal.salePrice ?? deal.sale_price ?? 0
-  const origPrice = deal.originalPrice ?? deal.original_price ?? 0
-  const savings = origPrice > salePrice ? (origPrice - salePrice).toFixed(2) : null
+  const salePrice  = deal.salePrice  ?? deal.sale_price  ?? 0
+  const origPrice  = deal.originalPrice ?? deal.original_price ?? 0
+  const savings    = origPrice > salePrice ? (origPrice - salePrice).toFixed(2) : null
   const discountPct = origPrice > 0 ? Math.round((1 - salePrice / origPrice) * 100) : 0
-  const rawImage = deal.image ?? deal.imageUrl ?? deal.image_url ?? ''
-  const imageUrl = rawImage ? `/api/img?url=${encodeURIComponent(rawImage)}` : ''
-  const merchant = deal.merchant ?? deal.store ?? 'Amazon'
+  const rawImage   = deal.image ?? deal.imageUrl ?? deal.image_url ?? ''
+  const imageUrl   = rawImage ? '/api/img?url=' + encodeURIComponent(rawImage) : ''
+  const merchant   = deal.merchant ?? deal.store ?? 'Amazon'
+  const placeholderLetter = merchant.replace(/[^a-zA-Z]/g, '')[0]?.toUpperCase() ?? '?'
 
   return (
     <a href={deal.url} target="_blank" rel="noopener noreferrer" className="deal-card">
       <div className="deal-thumb">
-        {imageUrl && (
+        {imageUrl ? (
           <img
             src={imageUrl}
             alt={deal.title}
             className="deal-thumb-img"
-            onError={(e) => { e.currentTarget.style.display = 'none' }}
+            onError={(e) => {
+              if (rawImage && e.currentTarget.src !== rawImage) {
+                e.currentTarget.src = rawImage
+              } else {
+                e.currentTarget.style.display = 'none'
+                if (e.currentTarget.nextSibling && e.currentTarget.nextSibling.style) {
+                  e.currentTarget.nextSibling.style.display = 'flex'
+                }
+              }
+            }}
           />
-        )}
+        ) : null}
+        <div
+          className="deal-thumb-placeholder"
+          style={{
+            display: imageUrl ? 'none' : 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            height: '100%',
+            background: 'var(--bg-surface, #f5f5f7)',
+            color: 'var(--text-tertiary, #aeaeb2)',
+            fontSize: 28,
+            fontWeight: 700,
+            fontFamily: 'var(--font)',
+            letterSpacing: '-0.5px',
+            userSelect: 'none',
+          }}
+        >
+          {placeholderLetter}
+        </div>
         {discountPct > 0 && <div className="deal-pct">-{discountPct}%</div>}
         {deal.isStudentPick && <div className="student-badge">STUDENT PICK</div>}
       </div>
