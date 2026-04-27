@@ -28,18 +28,18 @@ function classifyDeal(title = '') {
 }
 
 export default function HomePage() {
-  const [deals,    setDeals]    = useState([])
-  const [loading,  setLoading]  = useState(true)
+  const [deals, setDeals] = useState([])
+  const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState('Today')
-  const [search,   setSearch]   = useState('')
-  const [page,     setPage]     = useState(1)
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const today = getToday()
 
   useEffect(() => {
     fetch('/api/deals')
       .then(r => r.json())
       .then(data => {
-        if (Array.isArray(data))             setDeals(data)
+        if (Array.isArray(data)) setDeals(data)
         else if (Array.isArray(data?.deals)) setDeals(data.deals)
         else setDeals([])
       })
@@ -56,21 +56,16 @@ export default function HomePage() {
 
   const gridDeals = useMemo(() => {
     let list = safeDeals
-
-    // Category filter
     if (category !== 'Today') {
       list = list.filter(d => classifyDeal(d.title) === category)
     }
-
-    // Keyword search — filters by title or merchant
     if (search) {
       const q = search.toLowerCase()
       list = list.filter(d =>
-        (d.title    || '').toLowerCase().includes(q) ||
+        (d.title || '').toLowerCase().includes(q) ||
         (d.merchant || '').toLowerCase().includes(q)
       )
     }
-
     return list
   }, [safeDeals, category, search])
 
@@ -103,7 +98,9 @@ export default function HomePage() {
             <h1 className="section-title">
               {search
                 ? `Results for "${search}"`
-                : category === 'Today' ? "Today's Deals" : `${category} Deals`}
+                : category === 'Today'
+                  ? "Today's Deals"
+                  : `${category} Deals`}
             </h1>
             <span className="section-date">{today}</span>
             {!loading && gridDeals.length > 0 && (
@@ -112,6 +109,7 @@ export default function HomePage() {
               </span>
             )}
           </div>
+
           {loading ? (
             <div className="deals-loading">Loading live deals...</div>
           ) : gridDeals.length === 0 ? null : (
@@ -121,9 +119,12 @@ export default function HomePage() {
                   <DealCard key={deal.id ?? Math.random()} deal={deal} />
                 ))}
               </div>
+
               {totalPages > 1 && (
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:12, marginTop:28, paddingBottom:8 }}>
-                  <button onClick={() => { setPage(p => p - 1); scrollToTop() }} disabled={page === 1}
+                  <button
+                    onClick={() => { setPage(p => p - 1); scrollToTop() }}
+                    disabled={page === 1}
                     style={{ padding:'7px 18px', borderRadius:8, border:'0.5px solid var(--border-strong)', background: page===1?'var(--bg-surface)':'#fff', color: page===1?'var(--text-tertiary)':'var(--text-primary)', fontSize:13, fontWeight:600, cursor:page===1?'default':'pointer', fontFamily:'var(--font)' }}>
                     ← Prev
                   </button>
@@ -131,148 +132,9 @@ export default function HomePage() {
                     Page {page} of {totalPages}
                     <span style={{ color:'var(--text-tertiary)', marginLeft:6 }}>({(page-1)*DEALS_PER_PAGE+1}–{Math.min(page*DEALS_PER_PAGE, gridDeals.length)} of {gridDeals.length})</span>
                   </span>
-                  <button onClick={() => { setPage(p => p + 1); scrollToTop() }} disabled={page === totalPages}
-                    style={{ padding:'7px 18px', borderRadius:8, border:'0.5px solid var(--border-strong)', background: page===totalPages?'var(--bg-surface)':'#fff', color: page===totalPages?'var(--text-tertiary)':'var(--text-primary)', fontSize:13, fontWeight:600, cursor:page===totalPages?'default':'pointer', fontFamily:'var(--font)' }}>
-                    Next →
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </main>
-        <AdSidebar />
-      </div>
-    </>
-  )
-}
-'use client'
-import { useState, useEffect, useMemo } from 'react'
-import NavBar from '@/components/NavBar'
-import CategoryNav from '@/components/CategoryNav'
-import PromoStrip from '@/components/PromoStrip'
-import DealCard from '@/components/DealCard'
-import AdSidebar from '@/components/AdSidebar'
-import StudentHub from '@/components/StudentHub'
-
-function getToday() {
-  return new Date().toLocaleDateString('en-US', {
-    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
-  }).toUpperCase()
-}
-
-const DEALS_PER_PAGE = 50
-
-// Priority-based classifier — each deal gets ONE tab, checked top to bottom.
-// Order matters: most specific first so nothing leaks into the wrong bucket.
-function classifyDeal(title = '') {
-  const t = title.toLowerCase()
-
-  // 1. Computers
-  if (/laptop|notebook|macbook|chromebook|ultrabook|gaming pc|gaming laptop|desktop pc|pc tower|all.in.one|mini pc|workstation|imac/.test(t)) return 'Computers'
-
-  // 2. Phones — unlocked handsets only
-  if (/\biphone \d|samsung galaxy [a-z0-9]|google pixel \d|motorola moto|oneplus \d|nothing phone|unlocked phone|unlocked smartphone|refurbished iphone|refurbished samsung/.test(t)) return 'Phones'
-
-  // 3. Accessories — checked BEFORE Electronics so cables/chargers/headphones don't leak
-  if (/\bcable|usb-c cable|lightning cable|charger|charging pad|charging station|power bank|usb hub|docking station|\badapter\b|\bmouse\b|\bkeyboard\b|webcam|screen protector|phone case|laptop bag|laptop sleeve|laptop stand|monitor arm|external ssd|external hard drive|memory card|sd card|flash drive|thumb drive|earbuds|earphones|airpods|headphones|portable speaker|bluetooth speaker|backpack|school bag|wall charger|surge protector|charging block/.test(t)) return 'Accessories'
-
-  // 4. Electronics — TVs, consoles, cameras, tablets, smart home, monitors
-  if (/\btv\b|television|oled|qled|4k tv|\bprojector\b|mirrorless|\bdslr\b|gopro|\bdrone\b|soundbar|home theater|ps5|playstation 5|xbox series|nintendo switch|gaming console|smart home|echo dot|fire stick|apple tv|chromecast|\broku\b|smartwatch|smart watch|fitness tracker|garmin|fitbit|e-reader|kindle|\btablet\b|\bipad\b|security camera|ring doorbell|baby monitor|gaming monitor|curved monitor|\bmonitor\b/.test(t)) return 'Electronics'
-
-  // 5. Home — appliances
-  if (/vacuum|robot vacuum|air purifier|humidifier|space heater|\bblender\b|toaster|coffee maker|espresso|air fryer|instant pot|pressure cooker|microwave|rice cooker|food processor|stand mixer|smart bulb|smart plug|thermostat|paper shredder|dehumidifier/.test(t)) return 'Home'
-
-  // 6. Fashion
-  if (/\bshirt\b|\btee\b|t-shirt|\bjeans\b|\bjacket\b|\bhoodie\b|sweatshirt|\bsneaker|\bshoe\b|\bboot\b|\bdress\b|\bpants\b|leggings|swimwear|pajama|sunglasses|\bwallet\b|\bhandbag\b|\bpurse\b/.test(t)) return 'Fashion'
-
-  // 7. Sports
-  if (/dumbbell|barbell|kettlebell|resistance band|treadmill|stationary bike|yoga mat|foam roller|gym bag|protein powder|basketball|football|tennis racket|golf club|boxing glove|cycling|\bbike\b|skateboard|hiking boot|camping tent|fishing rod|kayak|jump rope|sports bra|workout equipment/.test(t)) return 'Sports'
-
-  return 'General'
-}
-
-export default function HomePage() {
-  const [deals,    setDeals]    = useState([])
-  const [loading,  setLoading]  = useState(true)
-  const [category, setCategory] = useState('Today')
-  const [page,     setPage]     = useState(1)
-  const today = getToday()
-
-  useEffect(() => {
-    fetch('/api/deals')
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data))             setDeals(data)
-        else if (Array.isArray(data?.deals)) setDeals(data.deals)
-        else setDeals([])
-      })
-      .catch(() => setDeals([]))
-      .finally(() => setLoading(false))
-  }, [])
-
-  const safeDeals = Array.isArray(deals) ? deals : []
-
-  const featuredDeals = safeDeals
-    .filter(d => d.isFeatured)
-    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-    .slice(0, 6)
-
-  const gridDeals = useMemo(() => {
-    if (category === 'Today') return safeDeals
-    return safeDeals.filter(d => classifyDeal(d.title) === category)
-  }, [safeDeals, category])
-
-  const totalPages = Math.ceil(gridDeals.length / DEALS_PER_PAGE)
-  const pagedDeals = gridDeals.slice((page - 1) * DEALS_PER_PAGE, page * DEALS_PER_PAGE)
-
-  function handleCategoryChange(cat) {
-    setCategory(cat)
-    setPage(1)
-  }
-
-  function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  return (
-    <>
-      <NavBar />
-      <CategoryNav active={category} onChange={handleCategoryChange} />
-      <div className="page-wrap">
-        <main>
-          <StudentHub />
-          <PromoStrip deals={featuredDeals} />
-          <div className="section-header">
-            <h1 className="section-title">
-              {category === 'Today' ? "Today's Deals" : `${category} Deals`}
-            </h1>
-            <span className="section-date">{today}</span>
-            {!loading && gridDeals.length > 0 && (
-              <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-tertiary)' }}>
-                {gridDeals.length} deals
-              </span>
-            )}
-          </div>
-          {loading ? (
-            <div className="deals-loading">Loading live deals...</div>
-          ) : gridDeals.length === 0 ? null : (
-            <>
-              <div className="deal-grid">
-                {pagedDeals.map((deal) => (
-                  <DealCard key={deal.id ?? Math.random()} deal={deal} />
-                ))}
-              </div>
-              {totalPages > 1 && (
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:12, marginTop:28, paddingBottom:8 }}>
-                  <button onClick={() => { setPage(p => p - 1); scrollToTop() }} disabled={page === 1}
-                    style={{ padding:'7px 18px', borderRadius:8, border:'0.5px solid var(--border-strong)', background: page===1?'var(--bg-surface)':'#fff', color: page===1?'var(--text-tertiary)':'var(--text-primary)', fontSize:13, fontWeight:600, cursor:page===1?'default':'pointer', fontFamily:'var(--font)' }}>
-                    ← Prev
-                  </button>
-                  <span style={{ fontSize:12, color:'var(--text-secondary)', fontWeight:500 }}>
-                    Page {page} of {totalPages}
-                    <span style={{ color:'var(--text-tertiary)', marginLeft:6 }}>({(page-1)*DEALS_PER_PAGE+1}–{Math.min(page*DEALS_PER_PAGE, gridDeals.length)} of {gridDeals.length})</span>
-                  </span>
-                  <button onClick={() => { setPage(p => p + 1); scrollToTop() }} disabled={page === totalPages}
+                  <button
+                    onClick={() => { setPage(p => p + 1); scrollToTop() }}
+                    disabled={page === totalPages}
                     style={{ padding:'7px 18px', borderRadius:8, border:'0.5px solid var(--border-strong)', background: page===totalPages?'var(--bg-surface)':'#fff', color: page===totalPages?'var(--text-tertiary)':'var(--text-primary)', fontSize:13, fontWeight:600, cursor:page===totalPages?'default':'pointer', fontFamily:'var(--font)' }}>
                     Next →
                   </button>
