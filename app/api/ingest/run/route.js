@@ -1,33 +1,45 @@
 // app/api/ingest/run/route.js
-// Manual ingest trigger — called by the "🔄 Run Ingest Now" button in /admin.
-// Uses the same shared logic as the scheduled cron.
-//
-// Auth: requires Bearer ADMIN_PASSWORD. Falls back to CRON_SECRET so existing
-// cron tooling can still hit this if needed. Manual ingest must NEVER be public
-// because each call burns SerpApi credits against the monthly quota.
-import { runIngest } from '@/lib/ingest/runIngest'
+// Manual ingest trigger — called by the "Run Ingest Now" button in /admin.
+// Accepts optional 'sources' array in the POST body to run specific feeds only.
+// Auth: requires Bearer ADMIN_PASSWORD (falls back to CRON_SECRET).
 
-export const runtime     = 'nodejs'
+import { runIngest, ALL_SOURCES } from '@/lib/ingest/runIngest'
+
+export const runtime = 'nodejs'
 export const maxDuration = 60
 
 function auth(req) {
   const adminPassword = process.env.ADMIN_PASSWORD
   const cronSecret    = process.env.CRON_SECRET
   const header        = req.headers.get('authorization') || ''
-  if (adminPassword && header === `Bearer ${adminPassword}`) return true
-  if (cronSecret    && header === `Bearer ${cronSecret}`)    return true
+  if (adminPassword && header === 'Bearer ' + adminPassword) return true
+  if (cronSecret    && header === 'Bearer ' + cronSecret)    return true
   return false
 }
 
 async function handle(req) {
   if (!auth(req)) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Parse optional sources from POST body
+  let sources = ALL_SOURCES
+  if (req.method === 'POST') {
+    try {
+      const body = await req.json()
+      if (Array.isArray(body.sources) && body.sources.length > 0) {
+        // Validate — only allow known source names
+        sources = body.sources.filter(s => ALL_SOURCES.includes(s))
+        if (sources.length === 0) {
+          return Response.json({ error: 'No valid sources specified. Valid: ' + ALL_SOURCES.join(', ') }, { status: 400 })
+        }
+      }
+    } catch { /* no body or not JSON — use all sources */ }
+  }
+
   try {
-    const result = await runIngest({ triggerType: 'manual' })
+    const result = await runIngest({ triggerType: 'manual', sources })
     return Response.json({
-      ok:       true,
+      ok: true,
       ...result,
-      // surface count under the legacy keys the UI also reads
       upserted: result.pending_upserted,
       count:    result.pending_upserted,
     })
