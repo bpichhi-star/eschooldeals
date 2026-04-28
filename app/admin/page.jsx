@@ -293,11 +293,9 @@ function Dashboard({ token, isOpen }) {
               <label key={key} style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, cursor:'pointer', padding:'6px 12px', border: ingestSources[key] ? '2px solid #10b981' : '1px solid #d1d5db', borderRadius:7, background: ingestSources[key] ? '#f0fdf4' : '#fff', userSelect:'none', whiteSpace:'nowrap', fontWeight: ingestSources[key] ? 600 : 400 }}>
                 <input type="checkbox" checked={!!ingestSources[key]} onChange={e => setIngestSources(p => ({ ...p, [key]: e.target.checked }))} style={{ margin:0, cursor:'pointer', width:14, height:14 }} />
                 {label}
-                {sourceCountsMap[key] > 0 && (
-                  <span style={{ fontSize:11, fontWeight:700, background: ingestSources[key] ? '#dcfce7' : '#f3f4f6', color: ingestSources[key] ? '#15803d' : '#6b7280', borderRadius:10, padding:'1px 6px', marginLeft:2 }}>
-                    {sourceCountsMap[key]}
-                  </span>
-                )}
+                <span style={{ fontSize:11, fontWeight:700, background: (sourceCountsMap[key] || 0) > 0 ? (ingestSources[key] ? '#dcfce7' : '#f3f4f6') : '#fef2f2', color: (sourceCountsMap[key] || 0) > 0 ? (ingestSources[key] ? '#15803d' : '#6b7280') : '#ef4444', borderRadius:10, padding:'1px 6px', marginLeft:2 }}>
+                  {sourceCountsMap[key] || 0}
+                </span>
               </label>
             ))}
           </div>
