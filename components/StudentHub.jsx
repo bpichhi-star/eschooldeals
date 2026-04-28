@@ -1,6 +1,6 @@
 const STUDENT_DEALS = [
   { id: 1, brand: 'Spotify',    color: '#1DB954', offer: 'Premium for Students',       price: '$5.99/mo',  originalPrice: '$11.99/mo', url: 'https://www.spotify.com/us/student/' },
-  { id: 2, brand: 'Apple',      color: '#1d1d1f', offer: 'Apple Music Student Plan',   price: '$5.99/mo',  originalPrice: '$10.99/mo', url: 'https://www.apple.com/shop/buy-music/family-student/student' },
+  { id: 2, brand: 'Apple',      color: '#1d1d1f', offer: 'Apple Music Student Plan',   price: '$5.99/mo',  originalPrice: '$10.99/mo', url: 'https://music.apple.com/us/student' },
   { id: 3, brand: 'Amazon',     color: '#FF9900', offer: 'Prime Student 6-mo Trial',   price: 'Free',      originalPrice: '$14.99/mo', url: 'https://www.amazon.com/joinstudent' },
   { id: 4, brand: 'YouTube',    color: '#FF0000', offer: 'YouTube Premium Student',    price: '$7.99/mo',  originalPrice: '$13.99/mo', url: 'https://www.youtube.com/premium/student' },
   { id: 5, brand: 'Notion',     color: '#000000', offer: 'Notion Plus for Free',       price: 'Free',      originalPrice: '$16/mo',    url: 'https://www.notion.so/students' },
