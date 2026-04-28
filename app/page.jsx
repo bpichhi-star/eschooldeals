@@ -1,10 +1,9 @@
 // app/page.jsx
 'use client'; // This is a Client Component because it uses useState
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
-import styles from '../styles/Home.module.css';
 
 // This function now runs on the SERVER to fetch the data
 async function getDeals() {
@@ -82,7 +81,7 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Fetch deals on component mount
-  useState(() => {
+  useEffect(() => {
     getDeals().then(fetchedDeals => {
       setDeals(fetchedDeals);
     });
@@ -94,76 +93,30 @@ export default function Home() {
   );
 
   return (
-    <div className={styles.container}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
       <Head>
         <title>eSchoolDeals</title>
         <meta name="description" content="Find the best deals for school and home" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <nav className={styles.navbar}>
-        <div className={styles.navContainer}>
-          <h1 className={styles.logo}>eSchoolDeals</h1>
-          <div className={styles.searchContainer}>
+      <nav style={{ backgroundColor: 'white', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', padding: '1rem 0' }}>
+        <div style={{ maxWidth: '7xl', margin: '0 auto', padding: '0 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>eSchoolDeals</h1>
+          <div>
             <input
               type="text"
               placeholder="Search deals..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={styles.searchInput}
+              style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', outline: 'none' }}
             />
           </div>
         </div>
       </nav>
 
-      <main className={styles.main}>
+      <main style={{ maxWidth: '7xl', margin: '1.5rem auto', padding: '0 1rem' }}>
         {filteredDeals.length > 0 ? (
-          <div className={styles.grid}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
             {filteredDeals.map((deal, index) => (
-              <div key={index} className={styles.card}>
-                {deal.imageUrl ? (
-                  <Image
-                    src={deal.imageUrl}
-                    alt={deal.title}
-                    width={200}
-                    height={200}
-                    className={styles.dealImage}
-                    onError={(e) => {
-                      e.target.src = '/images/placeholder.png';
-                    }}
-                  />
-                ) : (
-                  <div className={styles.imagePlaceholder}>No Image</div>
-                )}
-                <h2>{deal.title}</h2>
-                <p className={styles.price}>{deal.price}</p>
-                <p>{deal.description}</p>
-                <a href={deal.link} target="_blank" rel="noopener noreferrer" className={styles.dealLink}>
-                  View Deal
-                </a>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className={styles.noDeals}>
-            <p>No deals available at the moment.</p>
-            <p>Please check back later!</p>
-          </div>
-        )}
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
-      </footer>
-    </div>
-  );
-}
+              <div key={index} style={{ backgroundColor: 'white', borderRadius: '0.5rem', overflow:*
