@@ -49,7 +49,7 @@ export async function GET(req) {
       if (!auth(req)) return Response.json({ error: 'Unauthorized' }, { status: 401 })
       const status = new URL(req.url).searchParams.get('status') || 'all'
       const supabase = getSupabaseAdmin()
-      let q = supabase.from('deals').select('*').order('score', { ascending: false, nullsFirst: false }).order('fetched_at', { ascending: false }).limit(300)
+      let q = supabase.from('deals').select('*').order('score', { ascending: false, nullsFirst: false }).order('fetched_at', { ascending: false }).limit(2000)
       if (status !== 'all') q = q.eq('status', status)
       const { data, error } = await q
       if (error) return Response.json({ error: error.message }, { status: 500 })
@@ -63,7 +63,15 @@ export async function POST(req) {
       const now = new Date().toISOString()
       // Auto-inject affiliate tracking before storing
   if (body.product_url) body.product_url = wrapAffiliate(body.product_url)
-      const row = { ...body, fetched_at: body.fetched_at||now, updated_at: now, expires_at: body.expires_at||new Date(Date.now()+7*864e5).toISOString(), status: 'active' }
+      const row = { ...body, fetched_at: body.fetched_at||now, updated_at: now, expires_at: body.expires_at || (() => {
+      // Expire at midnight ET tonight — consistent with ingest pipeline
+      const now    = new Date()
+      const etNow  = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }))
+      const etMid  = new Date(etNow)
+      etMid.setHours(23, 59, 59, 999)
+      const offsetMs = etNow.getTime() - now.getTime()
+      return new Date(etMid.getTime() - offsetMs).toISOString()
+    })(), status: 'active' }
       const { data, error } = await supabase.from('deals').insert(row).select().single()
       if (error) return Response.json({ error: error.message }, { status: 500 })
       return Response.json(data)
