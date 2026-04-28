@@ -1,56 +1,102 @@
 // app/api/admin/diagnose/route.js
+// Tests each feed exactly as the production code does.
+// GET /api/admin/diagnose?feed=edealinfo|slickdeals|dealnews|walmart|target|all
+
 export const runtime = 'nodejs'
 export const maxDuration = 30
 
-export async function GET(req) {
-  const feed = new URL(req.url).searchParams.get('feed') || 'edealinfo'
-  const results = {}
+const BROWSER_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Referer': 'https://www.google.com/',
+}
 
-  if (feed === 'edealinfo' || feed === 'all') {
-    // Test rss2json proxy approach
-    try {
-      const proxyUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent('https://www.edealinfo.com/deals-rss.php')
-      const res  = await fetch(proxyUrl)
-      const data = await res.json()
-      const items = data.items || []
-      const first = items[0] || null
-      results.edealinfo_via_rss2json = {
-        status:     res.status,
-        rss2status: data.status,
-        message:    data.message || null,
-        itemCount:  items.length,
-        firstItem:  first ? {
-          title:       (first.title || '').slice(0, 100),
-          link:        (first.link || '').slice(0, 100),
-          thumbnail:   first.thumbnail || null,
-          description: (first.description || '').slice(0, 300),
-          hasDollar:   /\$[\d,]+/.test(first.title || ''),
-          hrefs:       [...(first.description || '').matchAll(/href=["']([^"']+)["']/gi)].map(m => m[1]).slice(0, 5),
-        } : null,
-      }
-    } catch(e) {
-      results.edealinfo_via_rss2json = { error: e.message }
+// Test eDealInfo via rss2json proxy (same as production edealinfo.js)
+async function testEDealInfo() {
+  const feedUrl = 'https://www.edealinfo.com/deals-rss.php?s=top'
+  const proxyUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl)
+  try {
+    const res = await fetch(proxyUrl)
+    const data = await res.json()
+    const items = data.items || []
+    const first = items[0]
+    return {
+      proxy: 'rss2json',
+      status: res.status,
+      rss2jsonStatus: data.status,
+      rss2jsonMessage: data.message || null,
+      itemCount: items.length,
+      firstItem: first ? {
+        title: (first.title || '').slice(0, 100),
+        link: (first.link || '').slice(0, 100),
+        hasThumbnail: !!first.thumbnail,
+        descLength: (first.description || '').length,
+        hrefs: [...(first.description || '').matchAll(/href=["']([^"']+)["']/gi)].map(m => m[1]).slice(0, 5),
+        hasDollar: /\$[\d,]+/.test((first.title || '') + ' ' + (first.description || '')),
+      } : null
     }
+  } catch(e) {
+    return { error: e.message }
   }
+}
 
-  if (feed === 'slickdeals' || feed === 'all') {
-    try {
-      const res = await fetch('https://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1', {
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' }
-      })
-      const xml = await res.text()
-      const titleM = xml.match(/<title><!\[CDATA\[([^\]]+)\]\]><\/title>/i)
-      const descM  = xml.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/i)
-      const desc = descM?.[1] || ''
-      results.slickdeals = {
-        status: res.status, itemCount: (xml.match(/<item>/gi)||[]).length,
-        firstTitle: titleM?.[1]?.slice(0,100),
-        descLength: desc.length,
-        hrefs: [...desc.matchAll(/href=["']([^"']+)["']/gi)].map(m=>m[1]).slice(0,5),
-        hasDollar: /\$[\d,]+/.test(titleM?.[1]||''),
-      }
-    } catch(e) { results.slickdeals = { error: e.message } }
+// Test Slickdeals RSS directly
+async function testSlickdeals() {
+  const url = 'https://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1'
+  try {
+    const res = await fetch(url, { headers: BROWSER_HEADERS })
+    const text = await res.text()
+    const itemRe = /<item>([\s\S]*?)<\/item>/gi
+    let m, count = 0, firstTitle = '', firstHrefs = []
+    while ((m = itemRe.exec(text)) !== null && count < 1) {
+      count++
+      const titleM = m[1].match(/<!\[CDATA\[([\s\S]*?)\]\]>/)
+      firstTitle = (titleM?.[1] || '').slice(0, 100)
+      // Does title contain merchant name?
+      firstHrefs = [...m[1].matchAll(/href=["']([^"']+)["']/gi)].map(x => x[1]).slice(0, 5)
+    }
+    const totalItems = (text.match(/<item>/gi) || []).length
+    return {
+      status: res.status,
+      isXml: text.includes('<?xml') || text.includes('<rss'),
+      totalItems,
+      firstTitle,
+      firstHrefs,
+      hasMerchantInTitle: /\bat\s+(amazon|walmart|best buy|target|ebay|costco|newegg)/i.test(firstTitle),
+    }
+  } catch(e) {
+    return { error: e.message }
   }
+}
 
+async function testSerpApi(engine, query) {
+  const key = process.env.SERPAPI_KEY
+  if (!key) return { error: 'SERPAPI_KEY not set' }
+  try {
+    const params = new URLSearchParams({ engine, query, api_key: key })
+    const res = await fetch('https://serpapi.com/search.json?' + params)
+    const data = await res.json()
+    const items = data.organic_results || data.search_results || []
+    const first = items[0]
+    return {
+      status: res.status,
+      resultCount: items.length,
+      error: data.error || null,
+      firstItemKeys: first ? Object.keys(first) : [],
+      firstItemPrice: first ? (first.primary_offer?.offer_price ?? first.price ?? 'NOT FOUND') : null,
+      firstItemUrl: first ? (first.product_page_url || first.link || 'NOT FOUND') : null,
+    }
+  } catch(e) {
+    return { error: e.message }
+  }
+}
+
+export async function GET(req) {
+  const feed = new URL(req.url).searchParams.get('feed') || 'all'
+  const results = {}
+  if (feed === 'edealinfo' || feed === 'all') results.edealinfo = await testEDealInfo()
+  if (feed === 'slickdeals' || feed === 'all') results.slickdeals = await testSlickdeals()
+  if (feed === 'walmart'    || feed === 'all') results.walmart    = await testSerpApi('walmart', 'student laptop')
   return Response.json(results, { headers: { 'Cache-Control': 'no-store' } })
 }
