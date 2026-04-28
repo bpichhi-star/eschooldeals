@@ -13,45 +13,33 @@ function getToday() {
   }).toUpperCase()
 }
 
-// ─── Category filter map ──────────────────────────────────────────────────────
-// Each nav category matches deals by:
-//   1. Exact category match on `deal.category` (admin-set), OR
-//   2. Keyword match on `deal.title` (covers SerpApi's loose categorization)
-//
-// "Today" returns all active deals — no filter applied.
-const CATEGORY_FILTERS = {
-  Today:       () => true,
-  Electronics: d => d.category === 'Electronics' ||
-                    /\b(headphone|earbud|airpod|monitor|speaker|charger|cable|usb|hub|webcam|router|tv|television|camera|drone|smartwatch|tablet|kindle|ipad)\b/i.test(d.title),
-  Computers:   d => d.category === 'Computers' ||
-                    /\b(laptop|notebook|macbook|chromebook|desktop|pc tower|all.?in.?one|aio|mini pc|workstation|imac)\b/i.test(d.title),
-  Phones:      d => d.category === 'Phones' ||
-                    /\b(iphone|samsung galaxy|google pixel|smartphone|phone case|phone stand|phone holder|phone charger|cell phone)\b/i.test(d.title),
-  Home:        d => d.category === 'Home' ||
-                    /\b(vacuum|robot vacuum|lamp|furniture|sofa|couch|bed frame|mattress|pillow|blanket|chair|desk|shelf|storage|organizer|smart home|thermostat|doorbell)\b/i.test(d.title),
-  Kitchen:     d => d.category === 'Kitchen' ||
-                    /\b(blender|toaster|microwave|coffee maker|espresso|air fryer|instant pot|pressure cooker|cookware|pan set|knife set|food processor|kettle|mixer)\b/i.test(d.title),
-  Fashion:     d => d.category === 'Fashion' ||
-                    /\b(shoe|sneaker|boot|sandal|shirt|tee|jeans|jacket|coat|hoodie|sweater|dress|watch|sunglasses|wallet|handbag|purse)\b/i.test(d.title),
-  Sports:      d => d.category === 'Sports' ||
-                    /\b(yoga|fitness|dumbbell|barbell|kettlebell|treadmill|bike|cycling|tennis|basketball|football|soccer|golf|camping|hiking|outdoor)\b/i.test(d.title),
-  Travel:      d => d.category === 'Travel' ||
-                    /\b(luggage|suitcase|carry.?on|travel bag|duffel|backpack|passport|travel|garment bag)\b/i.test(d.title),
-  Toys:        d => d.category === 'Toys' ||
-                    /\b(lego|toy|puzzle|board game|action figure|doll|plush|stuffed animal|nerf|kids|playset)\b/i.test(d.title),
+const DEALS_PER_PAGE = 50
+
+function classifyDeal(title = '') {
+  const t = title.toLowerCase()
+  if (/laptop|notebook|macbook|chromebook|ultrabook|gaming pc|gaming laptop|desktop pc|pc tower|all.in.one|mini pc|workstation|imac/.test(t)) return 'Computers'
+  if (/\biphone \d|samsung galaxy [a-z0-9]|google pixel \d|motorola moto|oneplus \d|nothing phone|unlocked phone|unlocked smartphone|refurbished iphone|refurbished samsung/.test(t)) return 'Phones'
+  if (/\bcable|usb-c cable|lightning cable|charger|charging pad|charging station|power bank|usb hub|docking station|\badapter\b|\bmouse\b|\bkeyboard\b|webcam|screen protector|phone case|laptop bag|laptop sleeve|laptop stand|monitor arm|external ssd|external hard drive|memory card|sd card|flash drive|thumb drive|earbuds|earphones|airpods|headphones|portable speaker|bluetooth speaker|backpack|school bag|wall charger|surge protector|charging block/.test(t)) return 'Accessories'
+  if (/\btv\b|television|oled|qled|4k tv|\bprojector\b|mirrorless|\bdslr\b|gopro|\bdrone\b|soundbar|home theater|ps5|playstation 5|xbox series|nintendo switch|gaming console|smart home|echo dot|fire stick|apple tv|chromecast|\broku\b|smartwatch|smart watch|fitness tracker|garmin|fitbit|e-reader|kindle|\btablet\b|\bipad\b|security camera|ring doorbell|baby monitor|gaming monitor|curved monitor|\bmonitor\b/.test(t)) return 'Electronics'
+  if (/vacuum|robot vacuum|air purifier|humidifier|space heater|\bblender\b|toaster|coffee maker|espresso|air fryer|instant pot|pressure cooker|microwave|rice cooker|food processor|stand mixer|smart bulb|smart plug|thermostat|paper shredder|dehumidifier/.test(t)) return 'Home'
+  if (/\bshirt\b|\btee\b|t-shirt|\bjeans\b|\bjacket\b|\bhoodie\b|sweatshirt|\bsneaker|\bshoe\b|\bboot\b|\bdress\b|\bpants\b|leggings|swimwear|pajama|sunglasses|\bwallet\b|\bhandbag\b|\bpurse\b/.test(t)) return 'Fashion'
+  if (/dumbbell|barbell|kettlebell|resistance band|treadmill|stationary bike|yoga mat|foam roller|gym bag|protein powder|basketball|football|tennis racket|golf club|boxing glove|cycling|\bbike\b|skateboard|hiking boot|camping tent|fishing rod|kayak|jump rope|sports bra|workout equipment/.test(t)) return 'Sports'
+  return 'General'
 }
 
 export default function HomePage() {
-  const [deals,    setDeals]    = useState([])
-  const [loading,  setLoading]  = useState(true)
+  const [deals, setDeals] = useState([])
+  const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState('Today')
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const today = getToday()
 
   useEffect(() => {
     fetch('/api/deals')
       .then(r => r.json())
       .then(data => {
-        if (Array.isArray(data))             setDeals(data)
+        if (Array.isArray(data)) setDeals(data)
         else if (Array.isArray(data?.deals)) setDeals(data.deals)
         else setDeals([])
       })
@@ -61,46 +49,98 @@ export default function HomePage() {
 
   const safeDeals = Array.isArray(deals) ? deals : []
 
-  // Featured (ESD strip) — drawn from full active set, not filtered list
-  const esdDeals = safeDeals.filter(d => d.isFeatured)
-  const featuredDeals = esdDeals.length > 0
-    ? esdDeals.slice(0, 6)
-    : [...safeDeals].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 6)
+  const featuredDeals = safeDeals
+    .filter(d => d.isFeatured)
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    .slice(0, 6)
 
-  // Filtered grid based on selected nav category
   const gridDeals = useMemo(() => {
-    const filterFn = CATEGORY_FILTERS[category] ?? (() => true)
-    return safeDeals.filter(filterFn)
-  }, [safeDeals, category])
+    let list = safeDeals
+    if (category !== 'Today') {
+      list = list.filter(d => classifyDeal(d.title) === category)
+    }
+    if (search) {
+      const q = search.toLowerCase()
+      list = list.filter(d =>
+        (d.title || '').toLowerCase().includes(q) ||
+        (d.merchant || '').toLowerCase().includes(q)
+      )
+    }
+    return list
+  }, [safeDeals, category, search])
+
+  const totalPages = Math.ceil(gridDeals.length / DEALS_PER_PAGE)
+  const pagedDeals = gridDeals.slice((page - 1) * DEALS_PER_PAGE, page * DEALS_PER_PAGE)
+
+  function handleCategoryChange(cat) {
+    setCategory(cat)
+    setPage(1)
+  }
+
+  function handleSearch(q) {
+    setSearch(q)
+    setPage(1)
+  }
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   return (
     <>
-      <NavBar />
-      <CategoryNav active={category} onChange={setCategory} />
+      <NavBar onSearch={handleSearch} />
+      <CategoryNav active={category} onChange={handleCategoryChange} />
       <div className="page-wrap">
         <main>
           <StudentHub />
           <PromoStrip deals={featuredDeals} />
           <div className="section-header">
             <h1 className="section-title">
-              {category === 'Today' ? "Today's Deals" : `${category} Deals`}
+              {search
+                ? `Results for "${search}"`
+                : category === 'Today'
+                  ? "Today's Deals"
+                  : `${category} Deals`}
             </h1>
             <span className="section-date">{today}</span>
+            {!loading && gridDeals.length > 0 && (
+              <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-tertiary)' }}>
+                {gridDeals.length} deals
+              </span>
+            )}
           </div>
+
           {loading ? (
             <div className="deals-loading">Loading live deals...</div>
-          ) : gridDeals.length === 0 ? (
-            <div className="deals-loading">
-              {category === 'Today'
-                ? 'No deals yet — check back soon.'
-                : `No ${category} deals right now. Try another category.`}
-            </div>
-          ) : (
-            <div className="deal-grid">
-              {gridDeals.map((deal) => (
-                <DealCard key={deal.id ?? Math.random()} deal={deal} />
-              ))}
-            </div>
+          ) : gridDeals.length === 0 ? null : (
+            <>
+              <div className="deal-grid">
+                {pagedDeals.map((deal) => (
+                  <DealCard key={deal.id ?? Math.random()} deal={deal} />
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:12, marginTop:28, paddingBottom:8 }}>
+                  <button
+                    onClick={() => { setPage(p => p - 1); scrollToTop() }}
+                    disabled={page === 1}
+                    style={{ padding:'7px 18px', borderRadius:8, border:'0.5px solid var(--border-strong)', background: page===1?'var(--bg-surface)':'#fff', color: page===1?'var(--text-tertiary)':'var(--text-primary)', fontSize:13, fontWeight:600, cursor:page===1?'default':'pointer', fontFamily:'var(--font)' }}>
+                    ← Prev
+                  </button>
+                  <span style={{ fontSize:12, color:'var(--text-secondary)', fontWeight:500 }}>
+                    Page {page} of {totalPages}
+                    <span style={{ color:'var(--text-tertiary)', marginLeft:6 }}>({(page-1)*DEALS_PER_PAGE+1}–{Math.min(page*DEALS_PER_PAGE, gridDeals.length)} of {gridDeals.length})</span>
+                  </span>
+                  <button
+                    onClick={() => { setPage(p => p + 1); scrollToTop() }}
+                    disabled={page === totalPages}
+                    style={{ padding:'7px 18px', borderRadius:8, border:'0.5px solid var(--border-strong)', background: page===totalPages?'var(--bg-surface)':'#fff', color: page===totalPages?'var(--text-tertiary)':'var(--text-primary)', fontSize:13, fontWeight:600, cursor:page===totalPages?'default':'pointer', fontFamily:'var(--font)' }}>
+                    Next →
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </main>
         <AdSidebar />
