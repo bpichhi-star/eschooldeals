@@ -247,9 +247,18 @@ function Dashboard({ token, isOpen }) {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Ingest failed')
       const counts = selected.map(s => SOURCE_LABELS[s] + ': ' + (data[s] ?? 0)).join(' · ')
-      const dupes = data.dupes ?? 0
+      const dupes    = data.dupes ?? 0
       const newDeals = data.new ?? 0
-      setMsg('Ingest done — ' + counts + ' | New: ' + newDeals + (dupes > 0 ? ' · Dupes skipped: ' + dupes + ' (already ran today)' : '') + ' · Total upserted: ' + (data.upserted ?? data.count ?? '?'))
+      const expired  = data.expired ?? 0
+      const purged   = data.purged ?? 0
+      const parts = [
+        counts,
+        'New: ' + newDeals,
+        dupes   > 0 ? 'Dupes skipped: ' + dupes   : null,
+        expired > 0 ? 'Expired: ' + expired         : null,
+        purged  > 0 ? 'Purged (7d+): ' + purged    : null,
+      ].filter(Boolean).join(' · ')
+      setMsg('Ingest done — ' + parts)
       await load()
     } catch (e) {
       setMsg('Ingest error: ' + e.message)
