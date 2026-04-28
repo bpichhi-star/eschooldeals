@@ -39,6 +39,23 @@ export default function NavBar({ onSearch }) {
           <button type="button" onClick={handleClear} className="search-clear" aria-label="Clear search">✕</button>
           <button type="submit" className="search-btn">Search</button>
         </form>
+        <nav style={{ display:'flex', alignItems:'center', gap:16, marginLeft:12, flexShrink:0 }}>
+          <a
+            href="/archive"
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--text-secondary, #6b7280)',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            📅 Deal Archive
+          </a>
+        </nav>
       </div>
     </header>
   )
