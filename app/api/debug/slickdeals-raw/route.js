@@ -1,12 +1,14 @@
 // app/api/debug/slickdeals-raw/route.js
-// One-off debug endpoint — returns the first <item> from the Slickdeals RSS
-// feed verbatim so we can see what fields & href patterns are actually present.
-// Delete after diagnosing.
+// One-off debug — fetches the Slickdeals RSS from Vercel runtime and writes
+// the first item's fields + every href found into the debug_samples table
+// in Supabase so we can inspect via SQL. Delete after diagnosing.
 
+import { getSupabaseAdmin } from '@/lib/db/supabaseAdmin'
 export const runtime = 'nodejs'
 
 export async function GET() {
   const url = 'https://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1'
+  const supabase = getSupabaseAdmin()
   try {
     const res = await fetch(url, {
       headers: {
@@ -14,39 +16,33 @@ export async function GET() {
         'Accept':     'application/rss+xml, application/xml, text/xml, */*',
       },
     })
-    if (!res.ok) {
-      return Response.json({ ok: false, status: res.status, error: 'fetch failed' })
-    }
-    const xml = await res.text()
+    const xml = res.ok ? await res.text() : ''
     const itemM = xml.match(/<item>([\s\S]*?)<\/item>/i)
-    if (!itemM) {
-      return Response.json({ ok: false, length: xml.length, sample: xml.slice(0, 800) })
-    }
-    const item = itemM[1]
+    const item = itemM ? itemM[1] : ''
 
-    // Pull out each child tag separately so we can see them clearly
-    const tags = ['title', 'link', 'description', 'content:encoded', 'guid', 'pubDate', 'category']
+    const tags = ['title', 'link', 'description', 'content:encoded', 'guid', 'pubDate']
     const fields = {}
     for (const t of tags) {
       const re = new RegExp('<' + t + '[^>]*>([\\s\\S]*?)<\\/' + t + '>', 'i')
-      const m = item.match(re)
-      fields[t] = m ? m[1].slice(0, 3000) : null
+      const m  = item.match(re)
+      fields[t] = m ? m[1].slice(0, 4000) : null
     }
-
-    // Also show every distinct href found in the whole item
     const hrefs = []
-    const hrefRe = /href=["']([^"']+)["']/gi
-    let h
+    let h, hrefRe = /href=["']([^"']+)["']/gi
     while ((h = hrefRe.exec(item)) !== null) hrefs.push(h[1])
 
-    return Response.json({
-      ok: true,
+    const payload = JSON.stringify({
+      status: res.status,
       length: xml.length,
-      itemPreview: item.slice(0, 500),
+      itemPreview: item.slice(0, 800),
       fields,
-      hrefs: [...new Set(hrefs)].slice(0, 20),
-    }, { headers: { 'Cache-Control': 'no-store' } })
+      hrefs: [...new Set(hrefs)].slice(0, 30),
+    })
+
+    await supabase.from('debug_samples').insert({ key: 'slickdeals-rss', payload })
+    return Response.json({ ok: true, length: payload.length })
   } catch (e) {
+    await supabase.from('debug_samples').insert({ key: 'slickdeals-rss-error', payload: String(e?.message || e) })
     return Response.json({ ok: false, error: e.message })
   }
 }
