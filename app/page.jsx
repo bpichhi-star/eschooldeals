@@ -15,17 +15,12 @@ function getToday() {
 
 const DEALS_PER_PAGE = 50
 
-function classifyDeal(title = '') {
-  const t = title.toLowerCase()
-  if (/laptop|notebook|macbook|chromebook|ultrabook|gaming pc|gaming laptop|desktop pc|pc tower|all.in.one|mini pc|workstation|imac/.test(t)) return 'Computers'
-  if (/\biphone \d|samsung galaxy [a-z0-9]|google pixel \d|motorola moto|oneplus \d|nothing phone|unlocked phone|unlocked smartphone|refurbished iphone|refurbished samsung/.test(t)) return 'Phones'
-  if (/\bcable|usb-c cable|lightning cable|charger|charging pad|charging station|power bank|usb hub|docking station|\badapter\b|\bmouse\b|\bkeyboard\b|webcam|screen protector|phone case|laptop bag|laptop sleeve|laptop stand|monitor arm|external ssd|external hard drive|memory card|sd card|flash drive|thumb drive|earbuds|earphones|airpods|headphones|portable speaker|bluetooth speaker|backpack|school bag|wall charger|surge protector|charging block/.test(t)) return 'Accessories'
-  if (/\btv\b|television|oled|qled|4k tv|\bprojector\b|mirrorless|\bdslr\b|gopro|\bdrone\b|soundbar|home theater|ps5|playstation 5|xbox series|nintendo switch|gaming console|smart home|echo dot|fire stick|apple tv|chromecast|\broku\b|smartwatch|smart watch|fitness tracker|garmin|fitbit|e-reader|kindle|\btablet\b|\bipad\b|security camera|ring doorbell|baby monitor|gaming monitor|curved monitor|\bmonitor\b/.test(t)) return 'Electronics'
-  if (/vacuum|robot vacuum|air purifier|humidifier|space heater|\bblender\b|toaster|coffee maker|espresso|air fryer|instant pot|pressure cooker|microwave|rice cooker|food processor|stand mixer|smart bulb|smart plug|thermostat|paper shredder|dehumidifier/.test(t)) return 'Home'
-  if (/\bshirt\b|\btee\b|t-shirt|\bjeans\b|\bjacket\b|\bhoodie\b|sweatshirt|\bsneaker|\bshoe\b|\bboot\b|\bdress\b|\bpants\b|leggings|swimwear|pajama|sunglasses|\bwallet\b|\bhandbag\b|\bpurse\b/.test(t)) return 'Fashion'
-  if (/dumbbell|barbell|kettlebell|resistance band|treadmill|stationary bike|yoga mat|foam roller|gym bag|protein powder|basketball|football|tennis racket|golf club|boxing glove|cycling|\bbike\b|skateboard|hiking boot|camping tent|fishing rod|kayak|jump rope|sports bra|workout equipment/.test(t)) return 'Sports'
-  return 'General'
-}
+// Category nav filter: trust the server-assigned `category` field on each deal
+// (set by lib/utils/categorize.js during ingest). We used to re-classify
+// client-side from the title, but that meant any tweak to the rules required
+// a code deploy, AND the client-side rules drifted out of sync with the
+// canonical ones. The server is authoritative — admin-edited categories now
+// stick, and updates to lib/utils/categorize.js take effect immediately.
 
 export default function HomePage() {
   const [deals, setDeals] = useState([])
@@ -57,7 +52,7 @@ export default function HomePage() {
   const gridDeals = useMemo(() => {
     let list = safeDeals
     if (category !== 'Today') {
-      list = list.filter(d => classifyDeal(d.title) === category)
+      list = list.filter(d => (d.category || 'General') === category)
     }
     if (search) {
       const q = search.toLowerCase()
