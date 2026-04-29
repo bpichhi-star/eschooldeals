@@ -1,8 +1,6 @@
 'use client'
 
-const CATEGORIES = [
-  'Today', 'Electronics', 'Computers', 'Accessories', 'Phones', 'Home', 'Fashion', 'Sports',
-]
+import { NAV_CATEGORIES as CATEGORIES } from '@/lib/constants/categories'
 
 export default function CategoryNav({ active = 'Today', onChange }) {
   return (

@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { CATEGORIES, ADMIN_FILTER_CATEGORIES } from '@/lib/constants/categories'
 
 const API = '/api/admin/deals'
 const INGEST_API = '/api/ingest/run'
@@ -16,11 +17,6 @@ const STATUS_OPTS = [
   { value: 'pending', label: 'Pending', color: '#f59e0b', bg: '#fef3c7' },
   { value: 'active',  label: 'Active',  color: '#10b981', bg: '#d1fae5' },
   { value: 'expired', label: 'Expired', color: '#6b7280', bg: '#f3f4f6' },
-]
-
-const CATEGORIES = [
-  'All', 'Electronics', 'Computers', 'Phones', 'Home', 'Kitchen',
-  'Fashion', 'Sports', 'Travel', 'Toys', 'Software', 'Books',
 ]
 
 const SORT_OPTS = [
@@ -363,7 +359,7 @@ function Dashboard({ token, isOpen }) {
             style={{ flex:'1 1 220px', padding:'7px 12px', border:'1px solid #d1d5db', borderRadius:7, fontSize:13 }}
           />
           <select value={category} onChange={e => setCategory(e.target.value)} style={S.select}>
-            {CATEGORIES.map(c => <option key={c} value={c}>{c === 'All' ? 'All categories' : c}</option>)}
+            {ADMIN_FILTER_CATEGORIES.map(c => <option key={c} value={c}>{c === 'All' ? 'All categories' : c}</option>)}
           </select>
           <select value={sort} onChange={e => setSort(e.target.value)} style={S.select}>
             {SORT_OPTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
@@ -755,7 +751,7 @@ function AddDealForm({ token, onAdded }) {
             <div>
               <label style={S.fieldLabel}>Category</label>
               <select {...inp()} value={form.category} onChange={e => set('category', e.target.value)}>
-                {CATEGORIES.filter(c => c !== 'All').map(c => <option key={c}>{c}</option>)}
+                {CATEGORIES.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div style={{ gridColumn:'1/-1' }}>
