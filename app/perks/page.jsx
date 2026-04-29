@@ -75,6 +75,12 @@ const PERKS = [
     ],
   },
   {
+    title: 'Travel',
+    items: [
+      { brand: 'United', color: '#0033A0', offer: 'Young Adult Discount — Economy & Basic Economy (ages 18–23, MileagePlus, in-app)', price: '5% off', origPrice: '', url: 'https://www.united.com/en/us/fly/mileageplus/young-adult-discount.html' },
+    ],
+  },
+  {
     title: 'News & Reading',
     items: [
       { brand: 'NYT',       color: '#000000', offer: 'New York Times — Student rate',  price: '$4/mo',     origPrice: '$17/mo',   url: 'https://www.nytimes.com/subscription/edu' },
