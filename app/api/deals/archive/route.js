@@ -50,22 +50,21 @@ export async function GET(req) {
   nextDate.setDate(nextDate.getDate() + 1)
   const rangeEnd   = startOfDayET(nextDate.toLocaleDateString('en-CA', { timeZone: 'America/New_York' }))
 
-  let query = supabase
+  // A deal was "live during day X" if it was first seen on or before the end
+  // of day X (created_at <= rangeEnd) AND last seen on or after the start of
+  // day X (fetched_at >= rangeStart). Status is ignored — a recurring deal
+  // appears under every day it was visible, and a deal that has since
+  // expired still appears under the days it was live. Calendar shows the
+  // last 7 days; anything older falls off via purgeOldDeals.
+  const query = supabase
     .from('deals')
     .select('*')
     .in('category', STUDENT_CATEGORIES)
     .gt('sale_price', 0)
+    .lt('created_at', rangeEnd)
     .gte('fetched_at', rangeStart)
-    .lt('fetched_at', rangeEnd)
     .order('discount_pct', { ascending: false, nullsFirst: false })
     .limit(500)
-
-  // Today: show active only. Past days: show expired (archived)
-  if (isToday) {
-    query = query.eq('status', 'active')
-  } else {
-    query = query.eq('status', 'expired')
-  }
 
   const { data, error } = await query
   if (error) return Response.json({ error: error.message }, { status: 500 })
