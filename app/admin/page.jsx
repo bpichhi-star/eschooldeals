@@ -930,7 +930,12 @@ function AddDealForm({ token, onAdded }) {
             </div>
             <div style={{ gridColumn:'1/-1' }}>
               <label style={S.fieldLabel}>Image URL</label>
-              <input {...inp()} placeholder="https://... (optional)" value={form.image_url} onChange={e => set('image_url', e.target.value)} />
+              <input {...inp()} placeholder="https://... (optional, must end in .jpg/.png/etc.)" value={form.image_url} onChange={e => set('image_url', e.target.value)} />
+              {form.image_url && !/\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(form.image_url) && (
+                <div style={{ fontSize:11, color:'#b45309', marginTop:4 }}>
+                  ⚠ This doesn't look like an image URL — paste a direct link to the .jpg/.png file, not the product page. Right-click the product image → "Copy Image Address".
+                </div>
+              )}
             </div>
             <div style={{ gridColumn:'1/-1' }}>
               <label style={{ ...S.fieldLabel, marginBottom:6 }}>Placement</label>
