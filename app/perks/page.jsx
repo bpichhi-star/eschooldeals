@@ -22,6 +22,16 @@ const PERKS = [
       { brand: 'Canva',     color: '#00C4CC', offer: 'Pro for Education',                              price: 'Free', origPrice: '$14.99/mo', url: 'https://www.canva.com/education/' },
       { brand: 'Figma',     color: '#F24E1E', offer: 'Education plan — full Figma + FigJam',           price: 'Free', origPrice: '$15/mo',   url: 'https://www.figma.com/education/' },
       { brand: 'Grammarly', color: '#15C39A', offer: 'Premium discount with .edu email',               price: 'Discount', origPrice: '',     url: 'https://www.grammarly.com/edu' },
+      { brand: 'Autodesk',  color: '#000000', offer: 'Free 1-year educational license — AutoCAD, Maya, Fusion 360, more', price: 'Free', origPrice: '$235/mo', url: 'https://www.autodesk.com/education/edu-software/overview' },
+    ],
+  },
+  {
+    title: 'AI Tools',
+    items: [
+      { brand: 'Google',     color: '#4285F4', offer: 'Google AI Pro — Gemini, NotebookLM Pro (redeem by Apr 30, 2026)', price: 'Free 12 mo', origPrice: '$19.99/mo', url: 'https://gemini.google/students/' },
+      { brand: 'Perplexity', color: '#20808D', offer: 'Perplexity Pro Education — 50% off',                              price: '$10/mo',     origPrice: '$20/mo',     url: 'https://www.perplexity.ai/student' },
+      { brand: 'Copilot',    color: '#181717', offer: 'GitHub Copilot Student (new signups paused Apr 2026)',           price: 'Free',       origPrice: '$10/mo',     url: 'https://github.com/education/students' },
+      { brand: 'OpenAI',     color: '#000000', offer: 'Codex for university students — $100 in credits (US/CA)',         price: '$100 credit', origPrice: '',          url: 'https://openai.com/edu/' },
     ],
   },
   {
@@ -55,6 +65,14 @@ const PERKS = [
       { brand: 'Dell',     color: '#007DB8', offer: 'Dell Student & Member Purchase Plan',  price: 'Discount',       origPrice: '', url: 'https://www.dell.com/en-us/shop/scc/sc/member-purchase-program' },
       { brand: 'Lenovo',   color: '#E2231A', offer: 'Lenovo Student Discount Program',      price: 'Up to 20% off',  origPrice: '', url: 'https://www.lenovo.com/us/en/education/' },
       { brand: 'Samsung',  color: '#1428A0', offer: 'Samsung Education Store',              price: 'Up to 30% off',  origPrice: '', url: 'https://www.samsung.com/us/shop/offer-program/education-offers-program/' },
+    ],
+  },
+  {
+    title: 'Fashion & Apparel',
+    items: [
+      { brand: 'Nike',           color: '#000000', offer: '10% off Nike.com & Nike App for verified U.S. students', price: '10% off', origPrice: '', url: 'https://www.nike.com/membership/student-discount' },
+      { brand: 'North Face',     color: '#C8102E', offer: '10% off for verified U.S. college/university students',   price: '10% off', origPrice: '', url: 'https://www.thenorthface.com/help/student-discount.html' },
+      { brand: 'ASOS',           color: '#000000', offer: '10% off year-round for verified students',                price: '10% off', origPrice: '', url: 'https://www.asos.com/us/student-discount/' },
     ],
   },
   {
