@@ -75,6 +75,48 @@ const CATEGORY_SYNONYMS = {
   sports: 'Sports',
 }
 
+// Generate singular/plural variants of a free-text search token so that
+// typing "cases" matches titles containing "case" (and vice versa). Returns
+// an array of lowercase strings to OR-match against the haystack.
+//
+// Rules (intentionally simple — false-positive variants like "phonees" are
+// harmless because they just don't match anything; false negatives are what
+// users actually feel):
+//   - Toggle trailing 's'   (case ↔ cases, charger ↔ chargers)
+//   - 'ies' ↔ 'y'           (batteries ↔ battery)
+//   - 'es' plural strip ONLY for stems ending in sibilant clusters
+//                            (boxes → box, glasses → glass, watches → watch).
+//                            'cases' deliberately does NOT match this rule —
+//                            its stem 'cas' would falsely match "casual",
+//                            "cash", "casters" — so it falls through to the
+//                            simple trailing-'s' toggle.
+//   - Skip stemming for tokens shorter than 3 chars (avoids 'tv' → 't')
+//   - Strip leading/trailing punctuation (case. / case, / "case" all work)
+function tokenVariants(raw) {
+  // Strip surrounding punctuation but keep internal hyphens/apostrophes
+  // (so "cat-6" and "men's" survive intact).
+  const token = raw.replace(/^[^a-z0-9]+|[^a-z0-9'-]+$/gi, '')
+  if (token.length < 3) return [token]
+  const v = new Set([token])
+  // ies ↔ y  (batteries ↔ battery)
+  if (token.endsWith('ies')) v.add(token.slice(0, -3) + 'y')
+  else if (token.endsWith('y')) v.add(token.slice(0, -1) + 'ies')
+  // 'es' plural strip — only when the stem ends in a sibilant cluster.
+  // English uses '-es' plurals when the singular ends in [s, x, z, ch, sh]:
+  //   box → boxes, dress → dresses, glass → glasses, watch → watches,
+  //   ranch → ranches.
+  // 'cases' does NOT qualify because the stem 'cas' ends in single 's',
+  // not 'ss', so we don't accidentally generate the 'cas' variant.
+  if (token.endsWith('es') && token.length > 4) {
+    const stem = token.slice(0, -2)
+    if (/(?:[xz]|ss|ch|sh)$/.test(stem)) v.add(stem)
+  }
+  // Toggle trailing single 's' for simple plurals (case ↔ cases)
+  if (token.endsWith('s')) v.add(token.slice(0, -1))
+  else v.add(token + 's')
+  return [...v]
+}
+
 export default function HomePage() {
   const [deals, setDeals] = useState([])
   const [loading, setLoading] = useState(true)
@@ -145,16 +187,22 @@ export default function HomePage() {
       }
 
       // Helper that runs the actual filter with current settings.
-      const runFilter = (cat, subTokens) => safeDeals.filter(d => {
-        if (cat && (d.category || 'General') !== cat) return false
-        if (subTokens.length === 0) return true
-        const hay = (
-          (d.title || '') + ' ' +
-          (d.merchant || '') + ' ' +
-          (d.category || '')
-        ).toLowerCase()
-        return subTokens.every(t => hay.includes(t))
-      })
+      // Each substring token is expanded to plural/singular variants — typing
+      // "cases" matches titles containing "case" and vice versa.
+      const runFilter = (cat, subTokens) => {
+        const variantSets = subTokens.map(tokenVariants)
+        return safeDeals.filter(d => {
+          if (cat && (d.category || 'General') !== cat) return false
+          if (variantSets.length === 0) return true
+          const hay = (
+            (d.title || '') + ' ' +
+            (d.merchant || '') + ' ' +
+            (d.category || '')
+          ).toLowerCase()
+          // Every token group must have at least one variant present.
+          return variantSets.every(variants => variants.some(v => hay.includes(v)))
+        })
+      }
 
       let results = runFilter(filterCategory, substringTokens)
 
