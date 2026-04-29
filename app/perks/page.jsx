@@ -28,7 +28,6 @@ const PERKS = [
   {
     title: 'AI Tools',
     items: [
-      { brand: 'Google',     color: '#4285F4', offer: 'Google AI Pro — Gemini, NotebookLM Pro (redeem by Apr 30, 2026)', price: 'Free 12 mo', origPrice: '$19.99/mo', url: 'https://gemini.google/students/' },
       { brand: 'Perplexity', color: '#20808D', offer: 'Perplexity Pro Education — 50% off',                              price: '$10/mo',     origPrice: '$20/mo',     url: 'https://www.perplexity.ai/student' },
       { brand: 'Copilot',    color: '#181717', offer: 'GitHub Copilot Student (new signups paused Apr 2026)',           price: 'Free',       origPrice: '$10/mo',     url: 'https://github.com/education/students' },
       { brand: 'OpenAI',     color: '#000000', offer: 'Codex for university students — $100 in credits (US/CA)',         price: '$100 credit', origPrice: '',          url: 'https://openai.com/edu/' },
