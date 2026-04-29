@@ -459,6 +459,18 @@ button {
   transform: translateY(-2px);
 }
 
+/* "More Student Deals" CTA tile — dashed border + indigo accent so it reads
+   as a navigation entry rather than another brand. Same dimensions as a
+   regular .student-card so the grid stays uniform. */
+.student-card-more {
+  border: 1px dashed #c7d2fe;
+  background: linear-gradient(180deg, #f5f7ff 0%, #ffffff 100%);
+}
+.student-card-more:hover {
+  border-color: #6366f1;
+  background: linear-gradient(180deg, #eef2ff 0%, #ffffff 100%);
+}
+
 .student-brand-dot {
   width: 36px;
   height: 36px;
