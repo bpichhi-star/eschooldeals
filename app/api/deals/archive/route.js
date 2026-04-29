@@ -57,7 +57,7 @@ export async function GET(req) {
     .gt('sale_price', 0)
     .gte('fetched_at', rangeStart)
     .lt('fetched_at', rangeEnd)
-    .order('score', { ascending: false, nullsFirst: false })
+    .order('discount_pct', { ascending: false, nullsFirst: false })
     .limit(500)
 
   // Today: show active only. Past days: show expired (archived)
@@ -81,7 +81,6 @@ export async function GET(req) {
     url:           deal.product_url || '',
     image:         deal.image_url || null,
     isStudentPick: Boolean(deal.is_student_relevant),
-    score:         deal.score ?? 0,
   }))
 
   return Response.json({ date: dateParam, isToday, count: deals.length, deals })

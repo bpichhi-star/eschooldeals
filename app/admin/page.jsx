@@ -24,11 +24,10 @@ const CATEGORIES = [
 ]
 
 const SORT_OPTS = [
-  { value: 'score',     label: 'Score (high → low)' },
+  { value: 'discount',  label: 'Discount % (high → low)' },
   { value: 'fetched',   label: 'Date (newest first)' },
   { value: 'price-asc', label: 'Price (low → high)' },
   { value: 'price-desc',label: 'Price (high → low)' },
-  { value: 'discount',  label: 'Discount % (high → low)' },
 ]
 
 // ─── Auth wrapper ─────────────────────────────────────────────────────────────
@@ -81,7 +80,7 @@ function Dashboard({ token, isOpen }) {
   const [loading,  setLoading]  = useState(false)
   const [filter,   setFilter]   = useState('pending')
   const [category, setCategory] = useState('All')
-  const [sort,     setSort]     = useState('score')
+  const [sort,     setSort]     = useState('discount')
   const [search,   setSearch]   = useState('')
   const [selected, setSelected] = useState(new Set())
   const [msg,      setMsg]      = useState('')
@@ -130,7 +129,7 @@ function Dashboard({ token, isOpen }) {
   const esdDeals = useMemo(() =>
     deals
       .filter(d => d.status === 'active' && d.is_featured)
-      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+      .sort((a, b) => (b.discount_pct ?? 0) - (a.discount_pct ?? 0))
   , [deals])
 
   const shown = useMemo(() => {
@@ -149,8 +148,7 @@ function Dashboard({ token, isOpen }) {
       case 'fetched':    sorted.sort((a,b) => new Date(b.fetched_at||0) - new Date(a.fetched_at||0)); break
       case 'price-asc':  sorted.sort((a,b) => (a.sale_price ?? Infinity) - (b.sale_price ?? Infinity)); break
       case 'price-desc': sorted.sort((a,b) => (b.sale_price ?? -1) - (a.sale_price ?? -1)); break
-      case 'discount':   sorted.sort((a,b) => (b.discount_pct ?? 0) - (a.discount_pct ?? 0)); break
-      default:           sorted.sort((a,b) => (b.score ?? 0) - (a.score ?? 0))
+      default:           sorted.sort((a,b) => (b.discount_pct ?? 0) - (a.discount_pct ?? 0))
     }
     return sorted
   }, [deals, filter, category, sort, search])
@@ -331,7 +329,7 @@ function Dashboard({ token, isOpen }) {
       {overCap && (
         <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:13, color:'#991b1b' }}>
           <strong>⚠️ Over ESD cap.</strong> The strip shows max {ESD_CAP} deals — you have {stats.esd} marked.
-          The 6 with the highest score will display; the rest are hidden until you un-flag them.
+          The 6 with the highest discount % will display; the rest are hidden until you un-flag them.
         </div>
       )}
 
@@ -423,7 +421,6 @@ function Dashboard({ token, isOpen }) {
 function ESDPanel({ deals, onUpdate, onDelete }) {
   const [editingId,    setEditingId]    = useState(null)
   const [editTitle,    setEditTitle]    = useState('')
-  const [editScore,    setEditScore]    = useState('')
   const [saving,       setSaving]       = useState(false)
 
   if (!deals.length) return (
@@ -439,15 +436,12 @@ function ESDPanel({ deals, onUpdate, onDelete }) {
   function startEdit(deal) {
     setEditingId(deal.id)
     setEditTitle(deal.title)
-    setEditScore(String(deal.score ?? 0))
   }
 
   async function saveEdit(deal) {
     setSaving(true)
     const updates = {}
     if (editTitle.trim() && editTitle.trim() !== deal.title) updates.title = editTitle.trim()
-    const newScore = parseFloat(editScore)
-    if (Number.isFinite(newScore) && newScore !== deal.score) updates.score = newScore
     if (Object.keys(updates).length) await onUpdate(deal.id, updates)
     setEditingId(null)
     setSaving(false)
@@ -473,7 +467,7 @@ function ESDPanel({ deals, onUpdate, onDelete }) {
           {deals.length} / {ESD_CAP}
         </span>
         <span style={{ fontSize:12, color:'#6b7280', marginLeft:4 }}>
-          Showing in the ESD strip on homepage · sorted by score
+          Showing in the ESD strip on homepage · sorted by discount %
         </span>
       </div>
 
@@ -502,7 +496,7 @@ function ESDPanel({ deals, onUpdate, onDelete }) {
                 <div style={{ width:52, height:52, borderRadius:5, border:'1px dashed #e5e7eb', flexShrink:0, background:'#fafafa' }} />
               )}
 
-              {/* Title + score — editable */}
+              {/* Title — editable */}
               <div style={{ flex:1, minWidth:0 }}>
                 {isEditing ? (
                   <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
@@ -511,14 +505,6 @@ function ESDPanel({ deals, onUpdate, onDelete }) {
                       onChange={e => setEditTitle(e.target.value)}
                       style={{ padding:'5px 8px', border:'1px solid #6366f1', borderRadius:5, fontSize:12, width:'100%', boxSizing:'border-box' }}
                     />
-                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <label style={{ fontSize:11, color:'#6b7280' }}>Score:</label>
-                      <input type="number" step="1"
-                        value={editScore}
-                        onChange={e => setEditScore(e.target.value)}
-                        style={{ width:70, padding:'3px 6px', border:'1px solid #d1d5db', borderRadius:5, fontSize:12 }}
-                      />
-                    </div>
                     <div style={{ display:'flex', gap:6 }}>
                       <button onClick={() => saveEdit(deal)} disabled={saving}
                         style={{ padding:'4px 12px', background:'#6366f1', color:'#fff', border:'none', borderRadius:5, fontSize:12, cursor:'pointer' }}>
@@ -535,7 +521,11 @@ function ESDPanel({ deals, onUpdate, onDelete }) {
                     <p style={{ fontSize:12, fontWeight:500, margin:'0 0 3px', lineHeight:1.4, wordBreak:'break-word' }}>{deal.title}</p>
                     <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
                       <span style={{ fontSize:13, fontWeight:700 }}>${Number(deal.sale_price ?? 0).toFixed(2)}</span>
-                      <span style={{ fontSize:11, color:'#6b7280' }}>Score: <strong>{Number(deal.score ?? 0).toFixed(0)}</strong></span>
+                      {deal.discount_pct > 0 && (
+                        <span style={{ fontSize:11, fontWeight:600, background:'#fee2e2', color:'#b91c1c', padding:'1px 7px', borderRadius:10 }}>
+                          -{deal.discount_pct}%
+                        </span>
+                      )}
                       <span style={{ fontSize:11, color:'#9ca3af' }}>{deal.merchant}</span>
                       {idx >= ESD_CAP && (
                         <span style={{ fontSize:10, color:'#dc2626', fontWeight:600 }}>Over cap — hidden</span>
@@ -582,22 +572,12 @@ function StatCard({ label, value, color }) {
 
 // ─── Deal card ────────────────────────────────────────────────────────────────
 function Card({ deal: d, selected, onSelect, onUpdate, onDelete }) {
-  const [editingScore, setEditingScore] = useState(false)
-  const [scoreInput,   setScoreInput]   = useState(d.score ?? 0)
-
   const isPending = d.status === 'pending'
   const isActive  = d.status === 'active'
   const isESD     = Boolean(d.is_featured)
   const placement = isESD ? 'esd' : 'feed'
   const border    = selected ? '#6366f1' : isPending ? '#f59e0b' : isActive ? '#10b981' : '#e5e7eb'
   const statusOpt = STATUS_OPTS.find(s => s.value === d.status) || STATUS_OPTS[0]
-
-  function commitScore() {
-    setEditingScore(false)
-    const newScore = parseFloat(scoreInput)
-    if (!Number.isFinite(newScore) || newScore === d.score) return
-    onUpdate(d.id, { score: newScore })
-  }
 
   return (
     <div style={{
@@ -637,25 +617,6 @@ function Card({ deal: d, selected, onSelect, onUpdate, onDelete }) {
             -{d.discount_pct}%
           </span>
         )}
-        <span style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:4, fontSize:11, color:'#6b7280' }}>
-          score:
-          {editingScore ? (
-            <input type="number" step="1" autoFocus
-              value={scoreInput}
-              onChange={e => setScoreInput(e.target.value)}
-              onBlur={commitScore}
-              onKeyDown={e => { if (e.key === 'Enter') commitScore(); if (e.key === 'Escape') { setEditingScore(false); setScoreInput(d.score ?? 0) } }}
-              style={{ width:56, padding:'1px 5px', border:'1px solid #d1d5db', borderRadius:4, fontSize:11 }}
-            />
-          ) : (
-            <button onClick={() => { setScoreInput(d.score ?? 0); setEditingScore(true) }}
-              style={{ background:'transparent', border:'1px dashed transparent', padding:'1px 4px', borderRadius:4, fontSize:11, color:'#374151', fontWeight:600, cursor:'pointer' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = '#d1d5db'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
-              {Number(d.score ?? 0).toFixed(0)} ✎
-            </button>
-          )}
-        </span>
       </div>
 
       <a href={d.product_url} target="_blank" rel="noopener noreferrer"

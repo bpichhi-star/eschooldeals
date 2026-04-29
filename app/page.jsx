@@ -51,7 +51,7 @@ export default function HomePage() {
 
   const featuredDeals = safeDeals
     .filter(d => d.isFeatured)
-    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    .sort((a, b) => (b.discountPct ?? 0) - (a.discountPct ?? 0))
     .slice(0, 6)
 
   const gridDeals = useMemo(() => {

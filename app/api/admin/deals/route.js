@@ -49,7 +49,7 @@ export async function GET(req) {
       if (!auth(req)) return Response.json({ error: 'Unauthorized' }, { status: 401 })
       const status = new URL(req.url).searchParams.get('status') || 'all'
       const supabase = getSupabaseAdmin()
-      let q = supabase.from('deals').select('*').order('score', { ascending: false, nullsFirst: false }).order('fetched_at', { ascending: false }).limit(2000)
+      let q = supabase.from('deals').select('*').order('discount_pct', { ascending: false, nullsFirst: false }).order('fetched_at', { ascending: false }).limit(2000)
       if (status !== 'all') q = q.eq('status', status)
       const { data, error } = await q
       if (error) return Response.json({ error: error.message }, { status: 500 })
