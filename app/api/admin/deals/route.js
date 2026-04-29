@@ -1,41 +1,6 @@
 import { getSupabaseAdmin } from '@/lib/db/supabaseAdmin'
+import { buildAffiliateUrl } from '@/lib/utils/affiliateUrl'
 export const runtime = 'nodejs'
-
-const CJ_PUBLISHER_ID = process.env.CJ_PUBLISHER_ID || '7936037'
-const CJ_WOOT_ADVERTISER_ID = process.env.CJ_WOOT_ADVERTISER_ID || '4909784'
-const AMAZON_ASSOCIATE_TAG = process.env.AMAZON_ASSOCIATE_TAG || 'eschooldeal0a-20'
-
-// Automatically injects affiliate tracking into known merchant URLs.
-// Woot  → wraps with CJ deep-link
-// Amazon → appends ?tag= associate tag
-// All other URLs pass through unchanged.
-function wrapAffiliate(url) {
-      if (!url) return url
-      try {
-              const parsed = new URL(url)
-              const host = parsed.hostname
-
-        // --- Woot via CJ deep-link ---
-        if (host.includes('woot.com')) {
-                  // Already wrapped — don't double-wrap
-                if (host.includes('anrdoezrs.net') || host.includes('dpbolvw.net') || host.includes('jdoqocy.com')) return url
-                  const encoded = encodeURIComponent(url)
-                  return `https://www.anrdoezrs.net/click-${CJ_PUBLISHER_ID}-${CJ_WOOT_ADVERTISER_ID}?url=${encoded}`
-        }
-
-        // --- Amazon via associate tag ---
-        if (host.includes('amazon.com')) {
-                  // Already has our tag — don't overwrite
-                if (parsed.searchParams.get('tag') === AMAZON_ASSOCIATE_TAG) return url
-                  parsed.searchParams.set('tag', AMAZON_ASSOCIATE_TAG)
-                  return parsed.toString()
-        }
-
-        return url
-      } catch {
-              return url
-      }
-}
 
 // Uses ADMIN_PASSWORD env var. If not set, admin is open (no auth required).
 function auth(req) {
@@ -62,7 +27,7 @@ export async function POST(req) {
       const supabase = getSupabaseAdmin()
       const now = new Date().toISOString()
       // Auto-inject affiliate tracking before storing
-  if (body.product_url) body.product_url = wrapAffiliate(body.product_url)
+  if (body.product_url) body.product_url = buildAffiliateUrl(body.product_url)
       const row = { ...body, fetched_at: body.fetched_at||now, updated_at: now, expires_at: body.expires_at || (() => {
       // Expire at midnight ET tonight — consistent with ingest pipeline
       const now    = new Date()
