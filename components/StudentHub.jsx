@@ -12,10 +12,10 @@ const STUDENT_DEALS = [
     id: 2,
     brand: 'Apple',
     color: '#1d1d1f',
-    offer: 'Apple Music Student Plan',
-    price: '$5.99/mo',
-    originalPrice: '$10.99/mo',
-    url: 'https://music.apple.com/us/student',
+    offer: 'Mac & iPad Education Pricing',
+    price: 'Up to $200 off',
+    originalPrice: '',
+    url: 'https://www.apple.com/us-edu/store',
   },
   {
     id: 3,
@@ -71,7 +71,7 @@ export default function StudentHub() {
             <div className="student-brand-name">{item.brand}</div>
             <div className="student-offer">{item.offer}</div>
             <div className="student-price">{item.price}</div>
-            <div className="student-price-orig">{item.originalPrice}</div>
+            {item.originalPrice && <div className="student-price-orig">{item.originalPrice}</div>}
           </a>
         ))}
       </div>
