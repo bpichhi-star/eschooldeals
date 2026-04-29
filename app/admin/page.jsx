@@ -86,7 +86,7 @@ function Dashboard({ token, isOpen }) {
   const [selected, setSelected] = useState(new Set())
   const [msg,      setMsg]      = useState('')
   const [ingesting,setIngesting]= useState(false)
-  const [ingestSources, setIngestSources] = useState({ walmart: true, target: true, slickdeals: true, edealinfo: true, dealnews: true })
+  const [ingestSources, setIngestSources] = useState({ walmart: true, target: true, slickdeals: true, dealnews: true })
   const [sourceCounts, setSourceCounts] = useState({})
 
   const hdrs = useMemo(() => ({ 'Content-Type':'application/json', Authorization:'Bearer '+token }), [token])
@@ -234,7 +234,7 @@ function Dashboard({ token, isOpen }) {
     setTimeout(() => setMsg(''), 4000)
   }
 
-  const SOURCE_LABELS = { walmart: 'Walmart', target: 'Target', slickdeals: 'Slickdeals', edealinfo: 'eDealInfo', dealnews: 'DealNews' }
+  const SOURCE_LABELS = { walmart: 'Walmart', target: 'Target', slickdeals: 'Slickdeals', dealnews: 'DealNews' }
 
   async function runIngest() {
     const selected = Object.entries(ingestSources).filter(([,v]) => v).map(([k]) => k)
@@ -289,7 +289,7 @@ function Dashboard({ token, isOpen }) {
         <div style={{ background:'#f9fafb', border:'1px solid #e5e7eb', borderRadius:10, padding:'12px 16px', display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
           <span style={{ fontSize:12, fontWeight:700, color:'#374151', textTransform:'uppercase', letterSpacing:0.4, whiteSpace:'nowrap' }}>Run Ingest:</span>
           <div style={{ display:'flex', gap:8, flexWrap:'wrap', flex:1 }}>
-            {[['walmart','Walmart'],['target','Target'],['slickdeals','Slickdeals'],['edealinfo','eDealInfo'],['dealnews','DealNews']].map(([key, label]) => (
+            {[['walmart','Walmart'],['target','Target'],['slickdeals','Slickdeals'],['dealnews','DealNews']].map(([key, label]) => (
               <label key={key} style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, cursor:'pointer', padding:'6px 12px', border: ingestSources[key] ? '2px solid #10b981' : '1px solid #d1d5db', borderRadius:7, background: ingestSources[key] ? '#f0fdf4' : '#fff', userSelect:'none', whiteSpace:'nowrap', fontWeight: ingestSources[key] ? 600 : 400 }}>
                 <input type="checkbox" checked={!!ingestSources[key]} onChange={e => setIngestSources(p => ({ ...p, [key]: e.target.checked }))} style={{ margin:0, cursor:'pointer', width:14, height:14 }} />
                 {label}
