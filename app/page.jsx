@@ -23,6 +23,58 @@ const DEALS_PER_PAGE = 50
 // canonical ones. The server is authoritative — admin-edited categories now
 // stick, and updates to lib/utils/categorize.js take effect immediately.
 
+// Search synonyms: when a search token matches one of these, we filter by the
+// mapped category rather than doing a substring match. Catches the case where
+// a user types "computer" or "laptop" expecting to see the Computers tab's
+// contents — without this, the substring match returns USB-C laptop chargers
+// (Accessories) and items mentioning "computer" in passing.
+//
+// Scope is intentionally narrow: only true category-name words and the most
+// common device-class aliases (laptop, macbook, ipad, etc.). Item-type words
+// like "headphones", "vacuum", "hoodie" are NOT synonyms — they substring-
+// match titles directly, so "headphones" returns only items whose titles say
+// "headphones", not every Accessories item.
+//
+// Two safety behaviors handle edge cases:
+//   1. Conflict (e.g. "iphone case" → Phones + Accessories) → fall back to
+//      pure substring across all tokens.
+//   2. Empty result after narrowing (e.g. "iphone" when Phones is empty)
+//      → retry with substring across all tokens. Means searching for an
+//      iPhone surfaces iPhone cases when no actual phones are listed.
+const CATEGORY_SYNONYMS = {
+  // Computers — laptops, desktops, all-in-ones, tablets/iPads
+  computer: 'Computers',  computers: 'Computers',
+  laptop:   'Computers',  laptops:   'Computers',
+  desktop:  'Computers',  desktops:  'Computers',
+  macbook:  'Computers',  macbooks:  'Computers',
+  chromebook: 'Computers', chromebooks: 'Computers',
+  ultrabook: 'Computers',
+  imac: 'Computers',      imacs: 'Computers',
+  ipad: 'Computers',      ipads: 'Computers',
+  tablet: 'Computers',    tablets: 'Computers',
+  pc: 'Computers',        pcs: 'Computers',
+
+  // Phones — actual handsets only
+  phone:      'Phones',   phones:      'Phones',
+  smartphone: 'Phones',   smartphones: 'Phones',
+  iphone:     'Phones',   iphones:     'Phones',
+
+  // Accessories — only the literal category name
+  accessory: 'Accessories', accessories: 'Accessories',
+
+  // Electronics
+  electronics: 'Electronics',
+
+  // Home
+  home: 'Home',
+
+  // Fashion
+  fashion: 'Fashion',
+
+  // Sports
+  sports: 'Sports',
+}
+
 export default function HomePage() {
   const [deals, setDeals] = useState([])
   const [loading, setLoading] = useState(true)
@@ -64,16 +116,56 @@ export default function HomePage() {
     // every active deal. Otherwise, apply the category filter as before.
     if (search) {
       const tokens = search.toLowerCase().split(/\s+/).filter(Boolean)
-      return safeDeals.filter(d => {
-        // Build the haystack once per deal: title + merchant + category.
+
+      // Step 1: classify each token as either a category synonym or a
+      // free-text token. If the user typed a word like "computer" or
+      // "laptop", we'll filter by the Computers category instead of doing
+      // a substring match against titles.
+      const synonymCategories = new Set()
+      const freeTokens = []
+      for (const t of tokens) {
+        const cat = CATEGORY_SYNONYMS[t]
+        if (cat) synonymCategories.add(cat)
+        else     freeTokens.push(t)
+      }
+
+      // Step 2: decide whether to apply a category filter.
+      //   - 0 synonym categories → no narrowing, all tokens are free-text
+      //   - 1 synonym category   → narrow to that category, free tokens
+      //                            still substring-match
+      //   - 2+ different cats    → conflict (e.g. "iphone case"). Fall back
+      //                            to pure substring across all tokens so
+      //                            cross-category searches still work.
+      let filterCategory = null
+      let substringTokens = freeTokens
+      if (synonymCategories.size === 1) {
+        filterCategory = [...synonymCategories][0]
+      } else if (synonymCategories.size > 1) {
+        substringTokens = tokens  // every token (incl. synonyms) substring-matches
+      }
+
+      // Helper that runs the actual filter with current settings.
+      const runFilter = (cat, subTokens) => safeDeals.filter(d => {
+        if (cat && (d.category || 'General') !== cat) return false
+        if (subTokens.length === 0) return true
         const hay = (
           (d.title || '') + ' ' +
           (d.merchant || '') + ' ' +
           (d.category || '')
         ).toLowerCase()
-        // Every search token must appear somewhere in the haystack.
-        return tokens.every(t => hay.includes(t))
+        return subTokens.every(t => hay.includes(t))
       })
+
+      let results = runFilter(filterCategory, substringTokens)
+
+      // Auto-fallback: if narrowing yielded zero results, retry with all
+      // tokens as substring match (no category filter). Means searching
+      // "iphone case" still surfaces cases even when Phones is empty.
+      if (results.length === 0 && filterCategory) {
+        results = runFilter(null, tokens)
+      }
+
+      return results
     }
     let list = safeDeals
     if (category !== 'Today') {
