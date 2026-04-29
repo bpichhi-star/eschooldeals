@@ -122,11 +122,19 @@ function Dashboard({ token, isOpen }) {
 
   const overCap = stats.esd > ESD_CAP
 
-  // ESD featured deals for the panel
+  // ESD featured deals for the panel — manual sort_order takes precedence,
+  // then discount_pct DESC for any without an explicit order.
   const esdDeals = useMemo(() =>
     deals
       .filter(d => d.status === 'active' && d.is_featured)
-      .sort((a, b) => (b.discount_pct ?? 0) - (a.discount_pct ?? 0))
+      .sort((a, b) => {
+        const aHas = a.sort_order != null
+        const bHas = b.sort_order != null
+        if (aHas && bHas) return a.sort_order - b.sort_order
+        if (aHas) return -1
+        if (bHas) return 1
+        return (b.discount_pct ?? 0) - (a.discount_pct ?? 0)
+      })
   , [deals])
 
   const shown = useMemo(() => {
@@ -443,6 +451,21 @@ function ESDPanel({ deals, onEdit, onUpdate, onDelete }) {
     await onUpdate(id, { is_featured: false })
   }
 
+  // Move a deal up (delta=-1) or down (delta=+1) in the ESD strip.
+  // We persist sequential sort_order values starting from 0, so future moves
+  // always have a clean numeric basis. Skipped at the boundaries.
+  async function move(idx, delta) {
+    const target = idx + delta
+    if (target < 0 || target >= deals.length) return
+    const reordered = [...deals]
+    const [moved] = reordered.splice(idx, 1)
+    reordered.splice(target, 0, moved)
+    // Write back contiguous sort_order: 0,1,2,...
+    await Promise.all(reordered.map((d, i) =>
+      d.sort_order === i ? null : onUpdate(d.id, { sort_order: i })
+    ))
+  }
+
   return (
     <div style={{ border:'1px solid #e0e7ff', borderRadius:10, marginBottom:20, overflow:'hidden', background:'#fafbff' }}>
       {/* Header */}
@@ -457,7 +480,7 @@ function ESDPanel({ deals, onEdit, onUpdate, onDelete }) {
           {deals.length} / {ESD_CAP}
         </span>
         <span style={{ fontSize:12, color:'#6b7280', marginLeft:4 }}>
-          Showing in the ESD strip on homepage · sorted by discount %
+          Showing in the ESD strip on homepage · use ↑↓ to reorder
         </span>
       </div>
 
@@ -503,7 +526,17 @@ function ESDPanel({ deals, onEdit, onUpdate, onDelete }) {
               </div>
 
               {/* Actions */}
-              <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+              <div style={{ display:'flex', gap:6, flexShrink:0, alignItems:'center' }}>
+                <button onClick={() => move(idx, -1)} disabled={idx === 0}
+                  title="Move up"
+                  style={{ padding:'5px 8px', background: idx === 0 ? '#f9fafb' : '#fff', color: idx === 0 ? '#d1d5db' : '#374151', border:'1px solid #e5e7eb', borderRadius:6, cursor: idx === 0 ? 'not-allowed' : 'pointer', fontSize:13, lineHeight:1 }}>
+                  ↑
+                </button>
+                <button onClick={() => move(idx, +1)} disabled={idx === deals.length - 1}
+                  title="Move down"
+                  style={{ padding:'5px 8px', background: idx === deals.length - 1 ? '#f9fafb' : '#fff', color: idx === deals.length - 1 ? '#d1d5db' : '#374151', border:'1px solid #e5e7eb', borderRadius:6, cursor: idx === deals.length - 1 ? 'not-allowed' : 'pointer', fontSize:13, lineHeight:1 }}>
+                  ↓
+                </button>
                 <button onClick={() => onEdit(deal)}
                   style={{ padding:'5px 10px', background:'#f3f4f6', color:'#374151', border:'1px solid #e5e7eb', borderRadius:6, cursor:'pointer', fontSize:12 }}>
                   ✎ Edit

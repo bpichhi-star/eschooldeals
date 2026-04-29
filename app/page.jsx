@@ -44,9 +44,18 @@ export default function HomePage() {
 
   const safeDeals = Array.isArray(deals) ? deals : []
 
+  // ESD strip: respect manual sort_order set by admin (lower = higher position).
+  // Falls back to discount_pct DESC when sort_order is null. Caps at 6.
   const featuredDeals = safeDeals
     .filter(d => d.isFeatured)
-    .sort((a, b) => (b.discountPct ?? 0) - (a.discountPct ?? 0))
+    .sort((a, b) => {
+      const aHas = a.sortOrder != null
+      const bHas = b.sortOrder != null
+      if (aHas && bHas) return a.sortOrder - b.sortOrder
+      if (aHas) return -1
+      if (bHas) return 1
+      return (b.discountPct ?? 0) - (a.discountPct ?? 0)
+    })
     .slice(0, 6)
 
   const gridDeals = useMemo(() => {

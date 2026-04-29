@@ -28,6 +28,12 @@ export async function POST(req) {
       const now = new Date().toISOString()
       // Auto-inject affiliate tracking before storing
   if (body.product_url) body.product_url = buildAffiliateUrl(body.product_url)
+      // Auto-compute discount_pct when both prices are set (matches edit-modal behavior).
+      // Skip if caller already provided discount_pct (lets feeds keep their canonical value).
+      if (body.discount_pct == null && body.sale_price != null && body.original_price != null) {
+        const s = Number(body.sale_price), o = Number(body.original_price)
+        body.discount_pct = (o > 0 && s > 0 && s < o) ? Math.round((1 - s / o) * 100) : 0
+      }
       const row = { ...body, fetched_at: body.fetched_at||now, updated_at: now, expires_at: body.expires_at || (() => {
       // Expire at midnight ET tonight — consistent with ingest pipeline
       const now    = new Date()
