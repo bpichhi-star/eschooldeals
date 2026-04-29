@@ -59,16 +59,24 @@ export default function HomePage() {
     .slice(0, 6)
 
   const gridDeals = useMemo(() => {
+    // When the user is searching, ignore the category tab — search runs across
+    // every active deal. Otherwise, apply the category filter as before.
+    if (search) {
+      const tokens = search.toLowerCase().split(/\s+/).filter(Boolean)
+      return safeDeals.filter(d => {
+        // Build the haystack once per deal: title + merchant + category.
+        const hay = (
+          (d.title || '') + ' ' +
+          (d.merchant || '') + ' ' +
+          (d.category || '')
+        ).toLowerCase()
+        // Every search token must appear somewhere in the haystack.
+        return tokens.every(t => hay.includes(t))
+      })
+    }
     let list = safeDeals
     if (category !== 'Today') {
       list = list.filter(d => (d.category || 'General') === category)
-    }
-    if (search) {
-      const q = search.toLowerCase()
-      list = list.filter(d =>
-        (d.title || '').toLowerCase().includes(q) ||
-        (d.merchant || '').toLowerCase().includes(q)
-      )
     }
     return list
   }, [safeDeals, category, search])
