@@ -46,6 +46,9 @@ export async function PATCH(req) {
       if (!auth(req)) return Response.json({ error: 'Unauthorized' }, { status: 401 })
       const { id, ...updates } = await req.json()
       if (!id) return Response.json({ error: 'id required' }, { status: 400 })
+      // Auto-inject affiliate tracking if URL is being edited (matches POST behavior).
+      // buildAffiliateUrl is idempotent for already-wrapped Amazon/Woot/Walmart URLs.
+      if (updates.product_url) updates.product_url = buildAffiliateUrl(updates.product_url)
       const supabase = getSupabaseAdmin()
       const { data, error } = await supabase.from('deals').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select().single()
       if (error) return Response.json({ error: error.message }, { status: 500 })

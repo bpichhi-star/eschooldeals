@@ -83,6 +83,7 @@ function Dashboard({ token, isOpen }) {
   const [ingesting,setIngesting]= useState(false)
   const [ingestSources, setIngestSources] = useState({ walmart: true, target: true, slickdeals: true, bestbuy: true })
   const [sourceCounts, setSourceCounts] = useState({})
+  const [editingDeal, setEditingDeal] = useState(null)
 
   const hdrs = useMemo(() => ({ 'Content-Type':'application/json', Authorization:'Bearer '+token }), [token])
 
@@ -154,7 +155,8 @@ function Dashboard({ token, isOpen }) {
     const res  = await fetch(API, { method:'PATCH', headers: hdrs, body: JSON.stringify({ id, ...updates }) })
     const data = await res.json()
     if (!res.ok) { setMsg('Error: '+data.error); return }
-    setDeals(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d))
+    // Use server response (not the request body) — affiliate wrapping may have rewritten product_url
+    setDeals(prev => prev.map(d => d.id === id ? { ...d, ...data } : d))
     flash('Saved')
   }
 
@@ -330,7 +332,7 @@ function Dashboard({ token, isOpen }) {
       )}
 
       {/* ── ESD Recommended Panel ───────────────────────────────────────────── */}
-      <ESDPanel deals={esdDeals} onUpdate={update} onDelete={remove} />
+      <ESDPanel deals={esdDeals} onEdit={setEditingDeal} onUpdate={update} onDelete={remove} />
 
       {/* ── Add Deal form ───────────────────────────────────────────────────── */}
       <AddDealForm token={token} onAdded={load} />
@@ -404,21 +406,29 @@ function Dashboard({ token, isOpen }) {
           <Card key={d.id} deal={d}
             selected={selected.has(d.id)}
             onSelect={() => toggleSelect(d.id)}
+            onEdit={setEditingDeal}
             onUpdate={update}
             onDelete={remove}
           />
         ))}
       </div>
+
+      {editingDeal && (
+        <EditDealModal
+          deal={editingDeal}
+          onClose={() => setEditingDeal(null)}
+          onSave={async (updates) => {
+            await update(editingDeal.id, updates)
+            setEditingDeal(null)
+          }}
+        />
+      )}
     </Wrap>
   )
 }
 
 // ─── ESD Recommended Panel ────────────────────────────────────────────────────
-function ESDPanel({ deals, onUpdate, onDelete }) {
-  const [editingId,    setEditingId]    = useState(null)
-  const [editTitle,    setEditTitle]    = useState('')
-  const [saving,       setSaving]       = useState(false)
-
+function ESDPanel({ deals, onEdit, onUpdate, onDelete }) {
   if (!deals.length) return (
     <div style={{ border:'1px dashed #e5e7eb', borderRadius:10, padding:'16px 20px', marginBottom:20, background:'#fafafa' }}>
       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
@@ -428,22 +438,6 @@ function ESDPanel({ deals, onUpdate, onDelete }) {
       <p style={{ fontSize:13, color:'#9ca3af', margin:0 }}>No featured deals yet. Mark deals as ⭐ ESD Recommended to add them here.</p>
     </div>
   )
-
-  function startEdit(deal) {
-    setEditingId(deal.id)
-    setEditTitle(deal.title)
-  }
-
-  async function saveEdit(deal) {
-    setSaving(true)
-    const updates = {}
-    if (editTitle.trim() && editTitle.trim() !== deal.title) updates.title = editTitle.trim()
-    if (Object.keys(updates).length) await onUpdate(deal.id, updates)
-    setEditingId(null)
-    setSaving(false)
-  }
-
-  function cancelEdit() { setEditingId(null) }
 
   async function removeFromESD(id) {
     await onUpdate(id, { is_featured: false })
@@ -470,7 +464,6 @@ function ESDPanel({ deals, onUpdate, onDelete }) {
       {/* Deal rows */}
       <div style={{ padding:'12px 16px', display:'flex', flexDirection:'column', gap:10 }}>
         {deals.map((deal, idx) => {
-          const isEditing = editingId === deal.id
           const proxySrc = deal.image_url ? `/api/img?url=${encodeURIComponent(deal.image_url)}` : ''
           return (
             <div key={deal.id} style={{
@@ -492,62 +485,38 @@ function ESDPanel({ deals, onUpdate, onDelete }) {
                 <div style={{ width:52, height:52, borderRadius:5, border:'1px dashed #e5e7eb', flexShrink:0, background:'#fafafa' }} />
               )}
 
-              {/* Title — editable */}
+              {/* Title + meta */}
               <div style={{ flex:1, minWidth:0 }}>
-                {isEditing ? (
-                  <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                    <input
-                      value={editTitle}
-                      onChange={e => setEditTitle(e.target.value)}
-                      style={{ padding:'5px 8px', border:'1px solid #6366f1', borderRadius:5, fontSize:12, width:'100%', boxSizing:'border-box' }}
-                    />
-                    <div style={{ display:'flex', gap:6 }}>
-                      <button onClick={() => saveEdit(deal)} disabled={saving}
-                        style={{ padding:'4px 12px', background:'#6366f1', color:'#fff', border:'none', borderRadius:5, fontSize:12, cursor:'pointer' }}>
-                        {saving ? 'Saving…' : 'Save'}
-                      </button>
-                      <button onClick={cancelEdit}
-                        style={{ padding:'4px 10px', background:'#f3f4f6', color:'#374151', border:'none', borderRadius:5, fontSize:12, cursor:'pointer' }}>
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <p style={{ fontSize:12, fontWeight:500, margin:'0 0 3px', lineHeight:1.4, wordBreak:'break-word' }}>{deal.title}</p>
-                    <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
-                      <span style={{ fontSize:13, fontWeight:700 }}>${Number(deal.sale_price ?? 0).toFixed(2)}</span>
-                      {deal.discount_pct > 0 && (
-                        <span style={{ fontSize:11, fontWeight:600, background:'#fee2e2', color:'#b91c1c', padding:'1px 7px', borderRadius:10 }}>
-                          -{deal.discount_pct}%
-                        </span>
-                      )}
-                      <span style={{ fontSize:11, color:'#9ca3af' }}>{deal.merchant}</span>
-                      {idx >= ESD_CAP && (
-                        <span style={{ fontSize:10, color:'#dc2626', fontWeight:600 }}>Over cap — hidden</span>
-                      )}
-                    </div>
-                  </>
-                )}
+                <p style={{ fontSize:12, fontWeight:500, margin:'0 0 3px', lineHeight:1.4, wordBreak:'break-word' }}>{deal.title}</p>
+                <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
+                  <span style={{ fontSize:13, fontWeight:700 }}>${Number(deal.sale_price ?? 0).toFixed(2)}</span>
+                  {deal.discount_pct > 0 && (
+                    <span style={{ fontSize:11, fontWeight:600, background:'#fee2e2', color:'#b91c1c', padding:'1px 7px', borderRadius:10 }}>
+                      -{deal.discount_pct}%
+                    </span>
+                  )}
+                  <span style={{ fontSize:11, color:'#9ca3af' }}>{deal.merchant}</span>
+                  {idx >= ESD_CAP && (
+                    <span style={{ fontSize:10, color:'#dc2626', fontWeight:600 }}>Over cap — hidden</span>
+                  )}
+                </div>
               </div>
 
               {/* Actions */}
-              {!isEditing && (
-                <div style={{ display:'flex', gap:6, flexShrink:0 }}>
-                  <button onClick={() => startEdit(deal)}
-                    style={{ padding:'5px 10px', background:'#f3f4f6', color:'#374151', border:'1px solid #e5e7eb', borderRadius:6, cursor:'pointer', fontSize:12 }}>
-                    ✎ Edit
-                  </button>
-                  <button onClick={() => removeFromESD(deal.id)}
-                    style={{ padding:'5px 10px', background:'#fff', color:'#6366f1', border:'1px solid #c7d2fe', borderRadius:6, cursor:'pointer', fontSize:12 }}>
-                    Remove
-                  </button>
-                  <button onClick={() => onDelete(deal.id)}
-                    style={{ padding:'5px 10px', background:'#fff', color:'#dc2626', border:'1px solid #fecaca', borderRadius:6, cursor:'pointer', fontSize:12 }}>
-                    🗑
-                  </button>
-                </div>
-              )}
+              <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+                <button onClick={() => onEdit(deal)}
+                  style={{ padding:'5px 10px', background:'#f3f4f6', color:'#374151', border:'1px solid #e5e7eb', borderRadius:6, cursor:'pointer', fontSize:12 }}>
+                  ✎ Edit
+                </button>
+                <button onClick={() => removeFromESD(deal.id)}
+                  style={{ padding:'5px 10px', background:'#fff', color:'#6366f1', border:'1px solid #c7d2fe', borderRadius:6, cursor:'pointer', fontSize:12 }}>
+                  Remove
+                </button>
+                <button onClick={() => onDelete(deal.id)}
+                  style={{ padding:'5px 10px', background:'#fff', color:'#dc2626', border:'1px solid #fecaca', borderRadius:6, cursor:'pointer', fontSize:12 }}>
+                  🗑
+                </button>
+              </div>
             </div>
           )
         })}
@@ -567,7 +536,7 @@ function StatCard({ label, value, color }) {
 }
 
 // ─── Deal card ────────────────────────────────────────────────────────────────
-function Card({ deal: d, selected, onSelect, onUpdate, onDelete }) {
+function Card({ deal: d, selected, onSelect, onEdit, onUpdate, onDelete }) {
   const isPending = d.status === 'pending'
   const isActive  = d.status === 'active'
   const isESD     = Boolean(d.is_featured)
@@ -659,11 +628,183 @@ function Card({ deal: d, selected, onSelect, onUpdate, onDelete }) {
         </div>
       )}
 
-      <div style={{ display:'flex' }}>
+      <div style={{ display:'flex', gap:6 }}>
+        <button onClick={() => onEdit(d)} style={{
+          marginLeft:'auto', padding:'5px 10px', background:'#f3f4f6', color:'#374151',
+          border:'1px solid #e5e7eb', borderRadius:6, cursor:'pointer', fontSize:12,
+        }}>✎ Edit</button>
         <button onClick={() => onDelete(d.id)} style={{
-          marginLeft:'auto', padding:'5px 10px', background:'#fff', color:'#dc2626',
+          padding:'5px 10px', background:'#fff', color:'#dc2626',
           border:'1px solid #fecaca', borderRadius:6, cursor:'pointer', fontSize:12,
         }}>🗑 Delete</button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Edit Deal modal ──────────────────────────────────────────────────────────
+// Full-field edit dialog. Reachable from both the ESD strip and main grid.
+// Saves only changed fields. PATCH endpoint re-runs buildAffiliateUrl on
+// product_url server-side, so pasting a clean URL auto-tags it.
+function EditDealModal({ deal, onClose, onSave }) {
+  const [form, setForm] = useState({
+    title:          deal.title          || '',
+    product_url:    deal.product_url    || '',
+    sale_price:     deal.sale_price     ?? '',
+    original_price: deal.original_price ?? '',
+    image_url:      deal.image_url      || '',
+    merchant:       deal.merchant       || '',
+    category:       deal.category       || 'Electronics',
+    is_featured:    Boolean(deal.is_featured),
+    status:         deal.status         || 'active',
+  })
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  // Diff against the original deal — only send fields that changed
+  function buildUpdates() {
+    const u = {}
+    if (form.title.trim() !== (deal.title || '')) u.title = form.title.trim()
+    if (form.product_url.trim() !== (deal.product_url || '')) u.product_url = form.product_url.trim()
+    if (form.image_url.trim() !== (deal.image_url || '')) u.image_url = form.image_url.trim() || null
+    if (form.merchant.trim() !== (deal.merchant || '')) u.merchant = form.merchant.trim()
+    if (form.category !== deal.category) u.category = form.category
+    if (form.is_featured !== Boolean(deal.is_featured)) u.is_featured = form.is_featured
+    if (form.status !== deal.status) u.status = form.status
+
+    const sale = form.sale_price === '' ? null : Number(form.sale_price)
+    const orig = form.original_price === '' ? null : Number(form.original_price)
+    const dealSale = deal.sale_price ?? null
+    const dealOrig = deal.original_price ?? null
+    if (sale !== dealSale) u.sale_price = sale
+    if (orig !== dealOrig) u.original_price = orig
+    // Recompute discount when either price changes
+    if ('sale_price' in u || 'original_price' in u) {
+      const s = sale ?? dealSale
+      const o = orig ?? dealOrig
+      u.discount_pct = (s != null && o != null && o > 0 && s < o)
+        ? Math.round((1 - s / o) * 100)
+        : 0
+    }
+    return u
+  }
+
+  async function handleSave() {
+    const updates = buildUpdates()
+    if (!Object.keys(updates).length) { onClose(); return }
+    setSaving(true); setErr('')
+    try {
+      await onSave(updates)
+    } catch (e) {
+      setErr(e?.message || 'Save failed')
+      setSaving(false)
+    }
+  }
+
+  const inp = {
+    width:'100%', boxSizing:'border-box', padding:'8px 10px',
+    border:'1px solid #d1d5db', borderRadius:6, fontSize:13,
+    fontFamily:'inherit',
+  }
+  const lbl = { fontSize:11, fontWeight:600, color:'#6b7280', textTransform:'uppercase', letterSpacing:0.4, marginBottom:4, display:'block' }
+
+  return (
+    <div onClick={onClose} style={{
+      position:'fixed', inset:0, background:'rgba(17,24,39,0.55)', zIndex:1000,
+      display:'flex', alignItems:'flex-start', justifyContent:'center', padding:'40px 20px', overflowY:'auto',
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background:'#fff', borderRadius:12, width:'100%', maxWidth:560,
+        boxShadow:'0 20px 50px rgba(0,0,0,0.25)', overflow:'hidden',
+      }}>
+        {/* Header */}
+        <div style={{ padding:'14px 20px', borderBottom:'1px solid #e5e7eb', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div>
+            <p style={{ fontSize:11, fontWeight:600, color:'#9ca3af', margin:0, textTransform:'uppercase', letterSpacing:0.5 }}>
+              Edit deal · {deal.source_key || 'manual'}
+            </p>
+            <h3 style={{ fontSize:15, fontWeight:700, margin:'2px 0 0', color:'#111' }}>ID {deal.id}</h3>
+          </div>
+          <button onClick={onClose} style={{ background:'transparent', border:'none', fontSize:22, cursor:'pointer', color:'#6b7280', lineHeight:1, padding:4 }}>×</button>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding:20, display:'flex', flexDirection:'column', gap:14, maxHeight:'70vh', overflowY:'auto' }}>
+          <div>
+            <label style={lbl}>Title</label>
+            <input style={inp} value={form.title} onChange={e => set('title', e.target.value)} />
+          </div>
+
+          <div>
+            <label style={lbl}>Product URL</label>
+            <textarea style={{ ...inp, minHeight:64, resize:'vertical', fontFamily:'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize:11.5 }}
+              value={form.product_url} onChange={e => set('product_url', e.target.value)} />
+            <p style={{ fontSize:10.5, color:'#9ca3af', margin:'4px 0 0' }}>
+              Saved URL will auto-tag for Amazon / Woot / Walmart. Already-tagged URLs pass through unchanged.
+            </p>
+          </div>
+
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <div>
+              <label style={lbl}>Sale price ($)</label>
+              <input style={inp} type="number" step="0.01" value={form.sale_price} onChange={e => set('sale_price', e.target.value)} />
+            </div>
+            <div>
+              <label style={lbl}>Original price ($)</label>
+              <input style={inp} type="number" step="0.01" value={form.original_price} onChange={e => set('original_price', e.target.value)} />
+            </div>
+          </div>
+
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <div>
+              <label style={lbl}>Merchant</label>
+              <input style={inp} value={form.merchant} onChange={e => set('merchant', e.target.value)} />
+            </div>
+            <div>
+              <label style={lbl}>Category</label>
+              <select style={inp} value={form.category} onChange={e => set('category', e.target.value)}>
+                {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label style={lbl}>Image URL</label>
+            <input style={inp} placeholder="https://..." value={form.image_url} onChange={e => set('image_url', e.target.value)} />
+          </div>
+
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <div>
+              <label style={lbl}>Status</label>
+              <select style={inp} value={form.status} onChange={e => set('status', e.target.value)}>
+                {STATUS_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Placement</label>
+              <select style={inp} value={form.is_featured ? 'esd' : 'feed'} onChange={e => set('is_featured', e.target.value === 'esd')}>
+                <option value="feed">📋 Main Feed</option>
+                <option value="esd">⭐ ESD Recommended</option>
+              </select>
+            </div>
+          </div>
+
+          {err && <p style={{ color:'#dc2626', fontSize:12, margin:0 }}>{err}</p>}
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding:'12px 20px', borderTop:'1px solid #e5e7eb', display:'flex', gap:8, justifyContent:'flex-end', background:'#fafafa' }}>
+          <button onClick={onClose} disabled={saving}
+            style={{ padding:'7px 14px', background:'#fff', color:'#374151', border:'1px solid #d1d5db', borderRadius:6, cursor:'pointer', fontSize:13 }}>
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            style={{ padding:'7px 16px', background:'#111', color:'#fff', border:'none', borderRadius:6, cursor: saving ? 'wait' : 'pointer', fontSize:13, fontWeight:600 }}>
+            {saving ? 'Saving…' : 'Save changes'}
+          </button>
+        </div>
       </div>
     </div>
   )
