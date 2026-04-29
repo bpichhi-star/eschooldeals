@@ -27,7 +27,13 @@ export async function GET(req) {
 
   try {
     console.log('[cron] starting ingest at ' + new Date().toISOString())
-    const result = await runIngest({ triggerType: 'cron' })
+    // NOTE: walmart paused in cron until 2026-05-24 (SerpApi monthly cap).
+    // Still runnable manually via /admin checkbox. Restore by removing the
+    // explicit `sources` arg below to fall back to ALL_SOURCES default.
+    const result = await runIngest({
+      triggerType: 'cron',
+      sources: ['target', 'slickdeals', 'bestbuy'],
+    })
     console.log('[cron] completed:', JSON.stringify(result))
     return NextResponse.json({ ok: true, ...result })
   } catch (err) {
