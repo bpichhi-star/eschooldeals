@@ -6,6 +6,7 @@ import PromoStrip from '@/components/PromoStrip'
 import DealCard from '@/components/DealCard'
 import AdSidebar from '@/components/AdSidebar'
 import StudentHub from '@/components/StudentHub'
+import BackToTop from '@/components/BackToTop'
 
 function getToday() {
   return new Date().toLocaleDateString('en-US', {
@@ -157,6 +158,7 @@ export default function HomePage() {
         </main>
         <AdSidebar />
       </div>
+      <BackToTop />
     </>
   )
 }
