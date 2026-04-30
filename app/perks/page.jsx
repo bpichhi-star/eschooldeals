@@ -83,8 +83,6 @@ const PERKS = [
   {
     title: 'News & Reading',
     items: [
-      { brand: 'NYT',       color: '#000000', offer: 'New York Times — Student rate',  price: '$4/mo',     origPrice: '$17/mo',   url: 'https://www.nytimes.com/subscription/edu' },
-      { brand: 'WSJ',       color: '#000000', offer: 'Wall Street Journal — Student',  price: 'Discount',  origPrice: '$36.99/mo', url: 'https://store.wsj.com/student' },
       { brand: 'Audible',   color: '#F8991C', offer: 'Audible Premium Plus discount',  price: '$9.95/mo',  origPrice: '$14.95/mo', url: 'https://www.audible.com/ep/students' },
       { brand: 'Kindle',    color: '#FF9900', offer: 'Kindle Unlimited — free trial',  price: '6 mo free', origPrice: '$11.99/mo', url: 'https://www.amazon.com/kindle-dbs/hz/signup' },
     ],
