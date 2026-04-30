@@ -1,6 +1,10 @@
 // app/api/admin/diagnose/route.js
 // Tests each feed exactly as the production code does.
-// GET /api/admin/diagnose?feed=slickdeals|walmart|target|all
+// GET /api/admin/diagnose?feed=slickdeals|walmart|scraperapi|target|all
+//
+// AUTH: requires Bearer ADMIN_PASSWORD header. Reads sensitive env vars
+// (SERPAPI_KEY, SCRAPERAPI_KEY) and probes paid APIs, so cannot be
+// anonymous — even on a stale URL.
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -41,32 +45,116 @@ async function testSlickdeals() {
   }
 }
 
-async function testSerpApi(engine, query) {
-  const key = process.env.SERPAPI_KEY
-  if (!key) return { error: 'SERPAPI_KEY not set' }
+// Hits ScraperAPI's account endpoint to report credit/quota status without
+// the key ever leaving Vercel runtime. Returns just the metadata fields,
+// never echoes the key itself.
+async function testScraperApiAccount() {
+  const key = process.env.SCRAPERAPI_KEY
+  if (!key) return { error: 'SCRAPERAPI_KEY not set' }
   try {
-    const params = new URLSearchParams({ engine, query, api_key: key })
-    const res = await fetch('https://serpapi.com/search.json?' + params)
-    const data = await res.json()
-    const items = data.organic_results || data.search_results || []
-    const first = items[0]
+    const res = await fetch('https://api.scraperapi.com/account?api_key=' + key, { cache: 'no-store' })
+    const status = res.status
+    let data = null, raw = null
+    try {
+      data = await res.json()
+    } catch {
+      raw = (await res.text()).slice(0, 200)
+    }
+    if (!res.ok) {
+      return { status, error: data?.error || raw || 'non-OK response' }
+    }
     return {
-      status: res.status,
-      resultCount: items.length,
-      error: data.error || null,
-      firstItemKeys: first ? Object.keys(first) : [],
-      firstItemPrice: first ? (first.primary_offer?.offer_price ?? first.price ?? 'NOT FOUND') : null,
-      firstItemUrl: first ? (first.product_page_url || first.link || 'NOT FOUND') : null,
+      status,
+      // Standard ScraperAPI account fields. Exact keys vary by tier; pass
+      // through whatever exists. concurrencyLimit + requestCount + requestLimit
+      // are the three we care about most.
+      concurrencyLimit:    data.concurrencyLimit    ?? null,
+      concurrentRequests:  data.concurrentRequests  ?? null,
+      requestCount:        data.requestCount        ?? null,
+      requestLimit:        data.requestLimit        ?? null,
+      failedRequestCount:  data.failedRequestCount  ?? null,
+      // Plan info (some tiers expose this, some don't)
+      planName:            data.planName            ?? data.subscriptionDate ?? null,
+      // Computed: % of monthly quota consumed
+      pctUsed: data.requestCount && data.requestLimit
+        ? Math.round((data.requestCount / data.requestLimit) * 100)
+        : null,
     }
   } catch(e) {
     return { error: e.message }
   }
 }
 
+// End-to-end test of one Target query. Mirrors what the production target.js
+// feed does (direct RedSky → ScraperAPI fallback), so we can see exactly
+// where the chain breaks. Uses a small fixed query to keep credit cost to 1.
+async function testTargetOne() {
+  const key = process.env.SCRAPERAPI_KEY
+  const REDSKY = 'https://redsky.target.com/redsky_aggregations/v1/web/plp_search_v2?key=9f36aeafbe60771e321a7cc95a78140772ab3e96&channel=WEB&keyword=laptop&page=%2Fs%2Flaptop&pricing_store_id=1375&visitor_id=01914BA3F6B30201A8A1A8E62AE6A1B7'
+  const out = { redsky: null, scraperapi: null }
+
+  // Step 1: direct RedSky fetch
+  try {
+    const r = await fetch(REDSKY, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+      },
+      cache: 'no-store',
+    })
+    let json = null, snippet = null
+    try { json = await r.json() } catch { snippet = '(non-JSON)' }
+    const products = json?.data?.search?.products || json?.data?.search?.search_response?.items?.Item || []
+    out.redsky = { status: r.status, productCount: Array.isArray(products) ? products.length : 0, snippet }
+  } catch(e) {
+    out.redsky = { error: e.message }
+  }
+
+  // Step 2: ScraperAPI fallback (only if direct didn't 200; skip if no key)
+  if (out.redsky?.status !== 200 && key) {
+    try {
+      const proxyUrl = 'https://api.scraperapi.com/?api_key=' + key + '&url=' + encodeURIComponent(REDSKY) + '&keep_headers=true'
+      const r = await fetch(proxyUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+        },
+        cache: 'no-store',
+      })
+      let json = null, snippet = null
+      try { json = await r.json() } catch { snippet = (await r.text()).slice(0, 200) }
+      const products = json?.data?.search?.products || []
+      out.scraperapi = { status: r.status, productCount: Array.isArray(products) ? products.length : 0, snippet }
+    } catch(e) {
+      out.scraperapi = { error: e.message }
+    }
+  } else if (out.redsky?.status === 200) {
+    out.scraperapi = { skipped: 'direct RedSky succeeded — no fallback needed' }
+  } else {
+    out.scraperapi = { error: 'SCRAPERAPI_KEY not set' }
+  }
+
+  return out
+}
+
+// Auth — diagnose endpoint reads sensitive env vars and probes paid APIs,
+// so it must require ADMIN_PASSWORD.
+function isAdmin(req) {
+  const adminPassword = process.env.ADMIN_PASSWORD
+  if (!adminPassword) return false
+  const header = req.headers.get('authorization') || ''
+  return header === 'Bearer ' + adminPassword
+}
+
 export async function GET(req) {
+  if (!isAdmin(req)) {
+    return Response.json({ error: 'Unauthorized — pass ADMIN_PASSWORD as Bearer token' }, { status: 401 })
+  }
   const feed = new URL(req.url).searchParams.get('feed') || 'all'
   const results = {}
-  if (feed === 'slickdeals' || feed === 'all') results.slickdeals = await testSlickdeals()
-  if (feed === 'walmart'    || feed === 'all') results.walmart    = await testSerpApi('walmart', 'student laptop')
+  if (feed === 'slickdeals'        || feed === 'all') results.slickdeals = await testSlickdeals()
+  if (feed === 'walmart'           || feed === 'all') results.walmart    = await testSerpApi('walmart', 'student laptop')
+  if (feed === 'scraperapi'        || feed === 'all') results.scraperapi = await testScraperApiAccount()
+  if (feed === 'target'            || feed === 'all') results.target     = await testTargetOne()
   return Response.json(results, { headers: { 'Cache-Control': 'no-store' } })
 }
