@@ -18,6 +18,20 @@ function startOfDayET(dateStr) {
   return new Date(utcMidnight.getTime() - offsetMs).toISOString()
 }
 
+// Pure-string +1 day on YYYY-MM-DD. Avoids the previous round-trip via
+// Date()+setDate()+toLocaleDateString(), which collapsed to the SAME date
+// on a UTC server because new Date('2026-04-30') = midnight UTC 4/30, and
+// setDate(31) + toLocaleDateString in ET = '2026-04-30' (because midnight
+// UTC = 8pm previous day ET). That bug made rangeEnd === rangeStart, so
+// "Today" returned the wrong subset of deals (the ones first-seen before
+// today AND fetched today, instead of all deals live today).
+function addOneDayET(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1, d))
+  dt.setUTCDate(dt.getUTCDate() + 1)
+  return dt.toISOString().slice(0, 10)
+}
+
 function todayET() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' }) // YYYY-MM-DD
 }
@@ -46,9 +60,7 @@ export async function GET(req) {
 
   const isToday  = dateParam === today
   const rangeStart = startOfDayET(dateParam)
-  const nextDate   = new Date(dateParam)
-  nextDate.setDate(nextDate.getDate() + 1)
-  const rangeEnd   = startOfDayET(nextDate.toLocaleDateString('en-CA', { timeZone: 'America/New_York' }))
+  const rangeEnd   = startOfDayET(addOneDayET(dateParam))
 
   // A deal was "live during day X" if it was first seen on or before the end
   // of day X (created_at <= rangeEnd) AND last seen on or after the start of
