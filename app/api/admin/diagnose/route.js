@@ -1,6 +1,6 @@
 // app/api/admin/diagnose/route.js
 // Tests each feed exactly as the production code does.
-// GET /api/admin/diagnose?feed=slickdeals|dealnews|walmart|target|all
+// GET /api/admin/diagnose?feed=slickdeals|walmart|target|all
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
