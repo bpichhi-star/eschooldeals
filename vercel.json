@@ -1,6 +1,6 @@
 {
   "crons": [
     { "path": "/api/cron/refresh-deals", "schedule": "0 9 * * *" },
-    { "path": "/api/cron/refresh-deals", "schedule": "0 16 * * *" }
+    { "path": "/api/cron/refresh-deals", "schedule": "0 19 * * *" }
   ]
 }
