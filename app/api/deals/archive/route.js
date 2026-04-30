@@ -4,8 +4,8 @@
 // Date must be YYYY-MM-DD in ET. Returns today's active deals if no date given.
 
 import { getSupabaseAdmin, hasSupabaseAdminEnv } from '@/lib/db/supabaseAdmin'
+import { isStudentRelevant, STUDENT_CATEGORIES } from '@/lib/utils/dealFilters'
 
-const STUDENT_CATEGORIES = ['Electronics','Computers','Phones','Accessories','Home','Fashion','Sports','General']
 const MAX_DAYS_BACK = 7
 
 function startOfDayET(dateStr) {
@@ -89,7 +89,14 @@ export async function GET(req) {
   const { data, error } = await query
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
-  const deals = (data || []).map((deal, i) => ({
+  // Apply the SAME junk filter as the homepage so the two views stay
+  // consistent. Without this, archive shows deals (e.g., listings without
+  // MSRP, residential-install audio) that the homepage drops, and the
+  // user-visible counts diverge — exactly the bug previously surfaced
+  // (homepage 263 vs archive 369).
+  const filtered = (data || []).filter(isStudentRelevant)
+
+  const deals = filtered.map((deal, i) => ({
     id:            deal.id ?? 'deal-' + i,
     title:         deal.title || '',
     merchant:      deal.merchant || '',
