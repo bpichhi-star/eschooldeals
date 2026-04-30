@@ -1,7 +1,9 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import NavBar from '@/components/NavBar'
 import DealCard from '@/components/DealCard'
+import BackToTop from '@/components/BackToTop'
+import { SORT_OPTIONS, sortDeals } from '@/lib/utils/dealSort'
 
 // Past 7 days including today
 function getLast7Days() {
@@ -33,6 +35,7 @@ export default function ArchivePage() {
   const [loading, setLoading] = useState(false)
   const [count, setCount] = useState(null)
   const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState('latest')
 
   useEffect(() => {
     setLoading(true)
@@ -48,9 +51,17 @@ export default function ArchivePage() {
       .finally(() => setLoading(false))
   }, [selectedDate])
 
-  const filtered = search
-    ? deals.filter(d => (d.title || '').toLowerCase().includes(search.toLowerCase()) || (d.merchant || '').toLowerCase().includes(search.toLowerCase()))
-    : deals
+  // Search filter first, then sort. Same pattern as the homepage so the two
+  // pages behave identically — change the sort, change the visible order;
+  // change the search, narrow the visible set.
+  const visible = useMemo(() => {
+    const filtered = search
+      ? deals.filter(d =>
+          (d.title || '').toLowerCase().includes(search.toLowerCase())
+          || (d.merchant || '').toLowerCase().includes(search.toLowerCase()))
+      : deals
+    return sortDeals(filtered, sortBy)
+  }, [deals, search, sortBy])
 
   return (
     <>
@@ -97,8 +108,8 @@ export default function ArchivePage() {
           })}
         </div>
 
-        {/* Deal count */}
-        <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+        {/* Deal count + sort dropdown */}
+        <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font)' }}>
             {loading
               ? 'Loading...'
@@ -108,8 +119,21 @@ export default function ArchivePage() {
           </span>
           {search && (
             <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-              Showing {filtered.length} matching "{search}"
+              Showing {visible.length} matching "{search}"
             </span>
+          )}
+          {!loading && visible.length > 0 && (
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              aria-label="Sort deals"
+              className="sort-select"
+              style={{ marginLeft: 'auto' }}
+            >
+              {SORT_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
           )}
         </div>
 
@@ -118,18 +142,19 @@ export default function ArchivePage() {
           <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-tertiary)', fontFamily: 'var(--font)', fontSize: 14 }}>
             Loading deals...
           </div>
-        ) : filtered.length === 0 ? (
+        ) : visible.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-tertiary)', fontFamily: 'var(--font)', fontSize: 14 }}>
             {count === 0 ? 'No deals archived for this day yet.' : 'No deals match your search.'}
           </div>
         ) : (
           <div className="deal-grid">
-            {filtered.map((deal) => (
+            {visible.map((deal) => (
               <DealCard key={deal.id} deal={deal} />
             ))}
           </div>
         )}
       </div>
+      <BackToTop />
     </>
   )
 }

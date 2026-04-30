@@ -107,6 +107,8 @@ export async function GET(req) {
     url:           deal.product_url || '',
     image:         deal.image_url || null,
     isStudentPick: Boolean(deal.is_student_relevant),
+    clickCount:    deal.click_count != null ? Number(deal.click_count) : 0,
+    createdAt:     deal.created_at || null,
   }))
 
   return Response.json({ date: dateParam, isToday, count: deals.length, deals })
