@@ -8,12 +8,20 @@
 // drift across DST transitions twice a year. Targets the morning ad-drop
 // window and the afternoon flash-sale window.
 //
-// Auth: Vercel automatically sends CRON_SECRET header when firing the cron.
-// If CRON_SECRET is not set in env vars, we allow it through with a warning
-// so the cron never silently fails due to a missing env var.
+// Auth: CRON_SECRET must be set in env vars; the route fails closed (401)
+// if it's missing. Vercel automatically sends the secret as a Bearer
+// header when firing scheduled crons, so production never sees this 401
+// unless someone misconfigures env vars or hits the URL by hand.
+//
+// Source selection: defaults to ALL_SOURCES; can be narrowed via env.
+//   CRON_DISABLE_SOURCES=walmart           → run everything except walmart
+//   CRON_DISABLE_SOURCES=walmart,target    → run everything except those two
+// This makes the production override visible in the Vercel dashboard
+// instead of buried in code, and lets us re-enable a paused source by
+// editing one env var (no redeploy needed for the next cron tick).
 
 import { NextResponse } from 'next/server'
-import { runIngest } from '@/lib/ingest/runIngest'
+import { runIngest, ALL_SOURCES } from '@/lib/ingest/runIngest'
 
 export const runtime    = 'nodejs'
 // Bumped 60s → 300s (Vercel Hobby cron max). Best Buy is intentionally
@@ -24,31 +32,37 @@ export const runtime    = 'nodejs'
 export const maxDuration = 300
 
 export async function GET(req) {
+  // ── Auth: fail closed ──────────────────────────────────────────────────────
+  // Previously this branch fell through with a console.warn when CRON_SECRET
+  // was missing — meaning anyone who knew the URL could trigger a full ingest
+  // cycle anonymously. Now we always require the header. Vercel's scheduled
+  // cron runs send the right Bearer header automatically; manual triggers
+  // need ADMIN_PASSWORD via /admin → Run Ingest (different endpoint).
   const cronSecret = process.env.CRON_SECRET
-
-  if (cronSecret) {
-    // CRON_SECRET is set — validate the header
-    const auth = req.headers.get('authorization')
-    if (auth !== 'Bearer ' + cronSecret) {
-      console.error('[cron] Unauthorized — bad CRON_SECRET header')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-  } else {
-    // CRON_SECRET not configured — allow through but log a warning
-    console.warn('[cron] CRON_SECRET not set in env vars — running without auth check')
+  if (!cronSecret) {
+    console.error('[cron] CRON_SECRET not set in env vars — refusing to run')
+    return NextResponse.json(
+      { error: 'CRON_SECRET not configured on server' },
+      { status: 500 }
+    )
+  }
+  const auth = req.headers.get('authorization')
+  if (auth !== 'Bearer ' + cronSecret) {
+    console.error('[cron] Unauthorized — bad or missing CRON_SECRET header')
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // ── Source selection via env var (visible override, no redeploy) ───────────
+  const disabledRaw = process.env.CRON_DISABLE_SOURCES || ''
+  const disabled = new Set(
+    disabledRaw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
+  )
+  const sources = ALL_SOURCES.filter(s => !disabled.has(s))
+
   try {
-    console.log('[cron] starting ingest at ' + new Date().toISOString())
-    // Walmart paused in cron schedule. SerpApi credit conservation; the
-    // walmart feed costs ~21 credits per run (one per query) and at 2 runs/day
-    // would burn ~1,260 credits/month. Re-evaluate on 2026-05-24 — restore by
-    // removing the explicit `sources` arg below to fall back to ALL_SOURCES.
-    // Walmart still runnable on-demand via the /admin → "Run Ingest" checkbox.
-    const result = await runIngest({
-      triggerType: 'cron',
-      sources: ['target', 'slickdeals', 'bestbuy'],
-    })
+    console.log('[cron] starting ingest at ' + new Date().toISOString() +
+                (disabled.size ? ' — disabled: ' + [...disabled].join(',') : ''))
+    const result = await runIngest({ triggerType: 'cron', sources })
     console.log('[cron] completed:', JSON.stringify(result))
     return NextResponse.json({ ok: true, ...result })
   } catch (err) {
