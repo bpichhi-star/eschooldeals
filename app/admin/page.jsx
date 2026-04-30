@@ -106,7 +106,6 @@ function Dashboard({ token, isOpen }) {
     pending: deals.filter(d => d.status === 'pending').length,
     active:  deals.filter(d => d.status === 'active').length,
     esd:     deals.filter(d => d.status === 'active' && d.is_featured).length,
-    expired: deals.filter(d => d.status === 'expired').length,
   }), [deals])
 
   // Per-source active deal counts — derived from loaded deals
@@ -348,14 +347,23 @@ function Dashboard({ token, isOpen }) {
       {/* ── Filters / search / sort ─────────────────────────────────────────── */}
       <div style={{ display:'grid', gap:8, marginBottom:14 }}>
         <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap' }}>
-          {['pending','active','expired','all'].map(f => (
+          {/*
+            'Expired' tab removed: the underlying status='expired' rows are
+            mostly time-rolled-over deals (source feed didn't re-run today),
+            not actually-dead offers. Keeping a tab for them put noise in
+            the admin filter row. status='expired' rows still exist in DB
+            and surface in archive views; admin can still mark a deal
+            expired explicitly via the bulk 'Expire' action below.
+            View all (including expired) via the 'All' tab.
+          */}
+          {['pending','active','all'].map(f => (
             <button key={f} onClick={() => setFilter(f)} style={{
               padding:'5px 14px', borderRadius:20, cursor:'pointer', fontSize:13,
               border: filter===f ? 'none' : '1px solid #d1d5db',
               background: filter===f ? '#111' : '#fff', color: filter===f ? '#fff' : '#374151',
             }}>
               {f === 'all' ? 'All' : f.charAt(0).toUpperCase()+f.slice(1)}
-              {' '}({f === 'all' ? stats.total : f === 'active' ? stats.active : f === 'pending' ? stats.pending : stats.expired})
+              {' '}({f === 'all' ? stats.total : f === 'active' ? stats.active : stats.pending})
             </button>
           ))}
           <button onClick={load} style={S.refreshBtn}>↻ Refresh</button>
