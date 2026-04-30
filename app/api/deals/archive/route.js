@@ -64,13 +64,21 @@ export async function GET(req) {
 
   // A deal was "live during day X" if it was first seen on or before the end
   // of day X (created_at <= rangeEnd) AND last seen on or after the start of
-  // day X (fetched_at >= rangeStart). Status is ignored — a recurring deal
-  // appears under every day it was visible, and a deal that has since
-  // expired still appears under the days it was live. Calendar shows the
-  // last 7 days; anything older falls off via purgeOldDeals.
+  // day X (fetched_at >= rangeStart) AND was actually visible to users on
+  // that day (status IN active/expired — never pending).
+  //
+  // Pending deals are in admin review queue and were never publicly visible,
+  // so they don't belong in any day's archive. Once admin approves a pending
+  // deal (status → active), it shows on the homepage AND becomes part of the
+  // current day's archive. If it later expires, it stays in past-day archives
+  // because expired deals WERE visible during the days they were active.
+  //
+  // Recurring deals appear under every day they were visible. Calendar shows
+  // the last 7 days; anything older falls off via purgeOldDeals.
   const query = supabase
     .from('deals')
     .select('*')
+    .in('status', ['active', 'expired'])
     .in('category', STUDENT_CATEGORIES)
     .gt('sale_price', 0)
     .lt('created_at', rangeEnd)
