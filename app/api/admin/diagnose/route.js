@@ -137,8 +137,78 @@ async function testTargetOne() {
   return out
 }
 
-// Auth — diagnose endpoint reads sensitive env vars and probes paid APIs,
-// so it must require ADMIN_PASSWORD.
+// Runs ONE production-style target query through the same fetchTargetQuery
+// pipeline used in cron, then reports per-filter drop counts. Lets us see
+// whether deals are being filtered out by MIN_DISCOUNT_PCT, MIN_REVIEW_COUNT,
+// price ceiling, etc.
+async function testTargetPipeline() {
+  const { fetchTargetDeals } = await import('@/lib/feeds/target')
+  // We can't easily reach into the internal filters from here, so the cleanest
+  // diagnostic is to run a single cleanly-filtered query manually. Re-fetch
+  // RedSky directly and walk the filter chain.
+  const REDSKY_KEY = '9f36aeafbe60771e321a7cc95a78140772ab3e96'
+  const url = 'https://redsky.target.com/redsky_aggregations/v1/web/plp_search_v2?'
+    + 'key=' + REDSKY_KEY
+    + '&channel=WEB&count=24&default_purchasability_filter=true&include_sponsored=false'
+    + '&keyword=' + encodeURIComponent('wireless earbuds')
+    + '&new_search=true&offset=0&page=' + encodeURIComponent('/s/wireless%20earbuds')
+    + '&platform=desktop&pricing_store_id=3991'
+
+  let products = []
+  try {
+    const r = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
+      cache: 'no-store',
+    })
+    if (!r.ok) return { error: 'RedSky returned ' + r.status }
+    const json = await r.json()
+    products = json?.data?.search?.products || []
+  } catch(e) {
+    return { error: e.message }
+  }
+
+  // Walk the filter chain from mapRedskyProduct
+  const stats = {
+    raw: products.length,
+    drop_no_item: 0,
+    drop_no_tcin_or_title: 0,
+    drop_no_price: 0,
+    drop_no_sale: 0,
+    drop_below_min_sale: 0,         // sale < 5
+    drop_above_max: 0,              // sale > 100 (max for wireless earbuds)
+    drop_no_discount: 0,            // discount_pct < 10
+    drop_below_min_reviews: 0,      // reviews < 5
+    drop_no_image: 0,
+    survivors: [],
+  }
+  const MIN_SALE = 5, MAX_PRICE = 100, MIN_DISCOUNT = 10, MIN_REVIEWS = 5
+
+  for (const item of products) {
+    const product = item?.item
+    if (!product) { stats.drop_no_item++; continue }
+    const tcin = product.tcin
+    const title = product.product_description?.title?.trim()
+    if (!tcin || !title) { stats.drop_no_tcin_or_title++; continue }
+    const priceData = item.price
+    if (!priceData) { stats.drop_no_price++; continue }
+    const sale = Number(priceData.current_retail) || Number(priceData.current_retail_min)
+    const regular = Number(priceData.reg_retail) || Number(priceData.reg_retail_min) || sale
+    if (!sale) { stats.drop_no_sale++; continue }
+    if (sale < MIN_SALE) { stats.drop_below_min_sale++; continue }
+    if (sale > MAX_PRICE) { stats.drop_above_max++; continue }
+    const discount_pct = regular > sale ? Math.round((1 - sale / regular) * 100) : 0
+    if (discount_pct < MIN_DISCOUNT) { stats.drop_no_discount++; continue }
+    const reviews = Number(item.ratings_and_reviews?.statistics?.rating?.count) || 0
+    if (reviews < MIN_REVIEWS) { stats.drop_below_min_reviews++; continue }
+    const image = product.enrichment?.images?.primary_image_url || product.enrichment?.images?.image
+    if (!image) { stats.drop_no_image++; continue }
+    stats.survivors.push({
+      title: title.slice(0, 60),
+      sale, regular, discount_pct, reviews,
+    })
+  }
+  return stats
+}
 function isAdmin(req) {
   const adminPassword = process.env.ADMIN_PASSWORD
   if (!adminPassword) return false
@@ -156,5 +226,6 @@ export async function GET(req) {
   if (feed === 'walmart'           || feed === 'all') results.walmart    = await testSerpApi('walmart', 'student laptop')
   if (feed === 'scraperapi'        || feed === 'all') results.scraperapi = await testScraperApiAccount()
   if (feed === 'target'            || feed === 'all') results.target     = await testTargetOne()
+  if (feed === 'target_pipeline')                     results.target_pipeline = await testTargetPipeline()
   return Response.json(results, { headers: { 'Cache-Control': 'no-store' } })
 }
