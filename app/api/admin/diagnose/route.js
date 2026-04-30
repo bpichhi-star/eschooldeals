@@ -1,6 +1,6 @@
 // app/api/admin/diagnose/route.js
 // Tests each feed exactly as the production code does.
-// GET /api/admin/diagnose?feed=edealinfo|slickdeals|dealnews|walmart|target|all
+// GET /api/admin/diagnose?feed=slickdeals|dealnews|walmart|target|all
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -10,35 +10,6 @@ const BROWSER_HEADERS = {
   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   'Accept-Language': 'en-US,en;q=0.9',
   'Referer': 'https://www.google.com/',
-}
-
-// Test eDealInfo via rss2json proxy (same as production edealinfo.js)
-async function testEDealInfo() {
-  const feedUrl = 'https://www.edealinfo.com/deals-rss.php?s=top'
-  const proxyUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl)
-  try {
-    const res = await fetch(proxyUrl)
-    const data = await res.json()
-    const items = data.items || []
-    const first = items[0]
-    return {
-      proxy: 'rss2json',
-      status: res.status,
-      rss2jsonStatus: data.status,
-      rss2jsonMessage: data.message || null,
-      itemCount: items.length,
-      firstItem: first ? {
-        title: (first.title || '').slice(0, 100),
-        link: (first.link || '').slice(0, 100),
-        hasThumbnail: !!first.thumbnail,
-        descLength: (first.description || '').length,
-        hrefs: [...(first.description || '').matchAll(/href=["']([^"']+)["']/gi)].map(m => m[1]).slice(0, 5),
-        hasDollar: /\$[\d,]+/.test((first.title || '') + ' ' + (first.description || '')),
-      } : null
-    }
-  } catch(e) {
-    return { error: e.message }
-  }
 }
 
 // Test Slickdeals RSS directly
@@ -95,7 +66,6 @@ async function testSerpApi(engine, query) {
 export async function GET(req) {
   const feed = new URL(req.url).searchParams.get('feed') || 'all'
   const results = {}
-  if (feed === 'edealinfo' || feed === 'all') results.edealinfo = await testEDealInfo()
   if (feed === 'slickdeals' || feed === 'all') results.slickdeals = await testSlickdeals()
   if (feed === 'walmart'    || feed === 'all') results.walmart    = await testSerpApi('walmart', 'student laptop')
   return Response.json(results, { headers: { 'Cache-Control': 'no-store' } })
