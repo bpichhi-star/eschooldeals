@@ -8,8 +8,32 @@ export default function DealCard({ deal }) {
   const merchant   = deal.merchant ?? deal.store ?? 'Amazon'
   const placeholderLetter = merchant.replace(/[^a-zA-Z]/g, '')[0]?.toUpperCase() ?? '?'
 
+  // Fire-and-forget click counter. Uses sendBeacon when available (most
+  // reliable when the user is navigating away) and falls back to fetch
+  // with keepalive. Either path is non-blocking so the outbound click
+  // never waits on us. Failures are swallowed silently in the API — a
+  // missed count is far better than disrupting the user's click.
+  function trackClick() {
+    if (deal.id == null) return
+    const url  = '/api/track-click'
+    const body = JSON.stringify({ id: deal.id })
+    try {
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        const blob = new Blob([body], { type: 'application/json' })
+        navigator.sendBeacon(url, blob)
+        return
+      }
+      fetch(url, {
+        method:    'POST',
+        headers:   { 'Content-Type': 'application/json' },
+        body,
+        keepalive: true,
+      }).catch(() => {})
+    } catch { /* swallow */ }
+  }
+
   return (
-    <a href={deal.url} target="_blank" rel="noopener noreferrer" className="deal-card">
+    <a href={deal.url} target="_blank" rel="noopener noreferrer" className="deal-card" onClick={trackClick}>
       <div className="deal-thumb">
         {imageUrl ? (
           <img

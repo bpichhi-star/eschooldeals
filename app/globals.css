@@ -199,6 +199,24 @@ button {
   text-transform: uppercase;
 }
 
+/* Sort dropdown next to the deal count. Native <select> styled to match
+   the rest of the section header — small, understated, no chrome. */
+.sort-select {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--bg-card, #fff);
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.sort-select:hover  { border-color: var(--border-strong); }
+.sort-select:focus  { border-color: var(--accent, #6366f1); }
+
 /* â”€â”€ PROMO STRIP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .promo-strip {
   background: #fff;
