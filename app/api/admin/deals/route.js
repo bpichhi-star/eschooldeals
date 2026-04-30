@@ -34,15 +34,27 @@ export async function POST(req) {
         const s = Number(body.sale_price), o = Number(body.original_price)
         body.discount_pct = (o > 0 && s > 0 && s < o) ? Math.round((1 - s / o) * 100) : 0
       }
-      const row = { ...body, fetched_at: body.fetched_at||now, updated_at: now, expires_at: body.expires_at || (() => {
-      // Expire at midnight ET tonight — consistent with ingest pipeline
-      const now    = new Date()
-      const etNow  = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }))
-      const etMid  = new Date(etNow)
-      etMid.setHours(23, 59, 59, 999)
-      const offsetMs = etNow.getTime() - now.getTime()
-      return new Date(etMid.getTime() - offsetMs).toISOString()
-    })(), status: 'active' }
+      // Default expires_at:
+      //   - admin-curated (is_featured=true OR source_key='manual') → NULL (evergreen).
+      //     Admin must set a real expiration date later if the offer has one.
+      //     The time-based sweep (.lt('expires_at', now)) doesn't match NULL, so
+      //     these deals stay active until admin marks them expired or sets a date.
+      //   - Everything else (admin adding a feed-style deal) → midnight ET tonight.
+      const isAdminCurated = body.is_featured === true || body.source_key === 'manual'
+      let expiresAt
+      if (body.expires_at !== undefined) {
+        expiresAt = body.expires_at  // honor admin-provided value (including null)
+      } else if (isAdminCurated) {
+        expiresAt = null
+      } else {
+        const _now    = new Date()
+        const etNow  = new Date(_now.toLocaleString('en-US', { timeZone: 'America/New_York' }))
+        const etMid  = new Date(etNow)
+        etMid.setHours(23, 59, 59, 999)
+        const offsetMs = etNow.getTime() - _now.getTime()
+        expiresAt = new Date(etMid.getTime() - offsetMs).toISOString()
+      }
+      const row = { ...body, fetched_at: body.fetched_at||now, updated_at: now, expires_at: expiresAt, status: 'active' }
       const { data, error } = await supabase.from('deals').insert(row).select().single()
       if (error) return Response.json({ error: error.message }, { status: 500 })
       return Response.json(data)
@@ -55,6 +67,28 @@ export async function PATCH(req) {
       // Auto-inject affiliate tracking if URL is being edited (matches POST behavior).
       // buildAffiliateUrl is idempotent for already-wrapped Amazon/Woot/Walmart URLs.
       if (updates.product_url) updates.product_url = buildAffiliateUrl(updates.product_url)
+      // When admin promotes a deal to featured, clear its expires_at to NULL
+      // (evergreen) UNLESS admin explicitly provided expires_at in the same
+      // PATCH. This prevents a feed-style midnight-tonight expires_at from
+      // wiping the deal off the strip overnight. Admin can later set a real
+      // expiration date with another PATCH.
+      if (updates.is_featured === true && updates.expires_at === undefined) {
+        updates.expires_at = null
+      }
+      // When admin reactivates a deal whose expires_at is in the past,
+      // clear it (NULL = evergreen) so the deal doesn't immediately re-expire
+      // on the next sweep. Admin can set a real expiration if they have one.
+      if (updates.status === 'active' && updates.expires_at === undefined) {
+        const supabaseRead = getSupabaseAdmin()
+        const { data: existing } = await supabaseRead
+          .from('deals')
+          .select('expires_at')
+          .eq('id', id)
+          .single()
+        if (existing?.expires_at && new Date(existing.expires_at) < new Date()) {
+          updates.expires_at = null
+        }
+      }
       const supabase = getSupabaseAdmin()
       const { data, error } = await supabase.from('deals').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select().single()
       if (error) return Response.json({ error: error.message }, { status: 500 })
