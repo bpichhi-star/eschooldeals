@@ -7,7 +7,10 @@
 // anonymous — even on a stale URL.
 
 export const runtime = 'nodejs'
-export const maxDuration = 30
+// 60s covers target_pipeline (15 serial RedSky queries × ~2s ≈ 30s
+// wall time, with margin for ScraperAPI fallback if RedSky throttles).
+// Other endpoints (scraperapi/slickdeals/walmart) finish in <2s.
+export const maxDuration = 60
 
 const BROWSER_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
